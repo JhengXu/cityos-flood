@@ -1,0 +1,33 @@
+{
+  "models": [
+    {
+      "auc": 0.9128,
+      "brier": 0.1347,
+      "hit_rate": 0.4118,
+      "miss_rate": 0.5882,
+      "false_alarm_rate": 0.0709,
+      "mean_lead_time_h": 0.12,
+      "type": "lstm"
+    },
+    {
+      "auc": 0.9093,
+      "brier": 0.1414,
+      "hit_rate": 0.3137,
+      "miss_rate": 0.6863,
+      "false_alarm_rate": 0.0355,
+      "mean_lead_time_h": 0.07,
+      "type": "transformer"
+    }
+  ],
+  "best": {
+    "auc": 0.9128,
+    "brier": 0.1347,
+    "hit_rate": 0.4118,
+    "miss_rate": 0.5882,
+    "false_alarm_rate": 0.0709,
+    "mean_lead_time_h": 0.12,
+    "type": "lstm"
+  },
+  "n_test": 192,
+  "note": "同一数据/同一固定切分/同一种子下对比；指标由固定切分+历史回放得到。"
+}

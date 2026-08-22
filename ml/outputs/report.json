@@ -1,0 +1,410 @@
+{
+  "n_test": 192,
+  "auc": 0.8496,
+  "brier": 0.157,
+  "calibration": {
+    "fop": [
+      0.0,
+      0.2222222222222222,
+      0.5555555555555556,
+      0.5714285714285714,
+      0.8333333333333334,
+      0.6666666666666666,
+      0.625
+    ],
+    "mpv": [
+      0.15426558520220504,
+      0.24878208173645866,
+      0.35789961119492847,
+      0.4604234337806702,
+      0.5248760316107008,
+      0.6307142310672336,
+      0.741485171020031
+    ]
+  },
+  "metrics": {
+    "tp": 56,
+    "fn": 12,
+    "fp": 30,
+    "tn": 94,
+    "hit_rate": 0.8235,
+    "miss_rate": 0.1765,
+    "false_alarm_rate": 0.2419
+  },
+  "mean_lead_time_h": 0.4,
+  "max_lead_time_h": 3.0,
+  "events": [
+    "2018-09-16"
+  ],
+  "replay": [
+    {
+      "event": "2018-09-16",
+      "district": "nanshan",
+      "affected": true,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.744,
+      "actual_flood": 1,
+      "lead_h": 3
+    },
+    {
+      "event": "2018-09-16",
+      "district": "baoan",
+      "affected": true,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.774,
+      "actual_flood": 1,
+      "lead_h": 2
+    },
+    {
+      "event": "2018-09-16",
+      "district": "yantian",
+      "affected": true,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.753,
+      "actual_flood": 1,
+      "lead_h": 2
+    },
+    {
+      "event": "2018-09-16",
+      "district": "longhua",
+      "affected": true,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.745,
+      "actual_flood": 1,
+      "lead_h": 2
+    },
+    {
+      "event": "2018-09-16",
+      "district": "dapeng",
+      "affected": true,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.771,
+      "actual_flood": 1,
+      "lead_h": 2
+    },
+    {
+      "event": "2018-09-16",
+      "district": "futian",
+      "affected": false,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.744,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2018-09-16",
+      "district": "luohu",
+      "affected": false,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.76,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2018-09-16",
+      "district": "longgang",
+      "affected": false,
+      "peak_mm_h": 70,
+      "pred_peak_prob": 0.75,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "nanshan",
+      "affected": true,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.456,
+      "actual_flood": 1,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "baoan",
+      "affected": true,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.656,
+      "actual_flood": 1,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "yantian",
+      "affected": true,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.566,
+      "actual_flood": 1,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "futian",
+      "affected": true,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.457,
+      "actual_flood": 1,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "luohu",
+      "affected": true,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.604,
+      "actual_flood": 1,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "longhua",
+      "affected": true,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.52,
+      "actual_flood": 1,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "longgang",
+      "affected": false,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.549,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "pingshan",
+      "affected": false,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.545,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2023-09-07",
+      "district": "guangming",
+      "affected": false,
+      "peak_mm_h": 85,
+      "pred_peak_prob": 0.55,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-04-23",
+      "district": "baoan",
+      "affected": true,
+      "peak_mm_h": 55,
+      "pred_peak_prob": 0.772,
+      "actual_flood": 1,
+      "lead_h": 2
+    },
+    {
+      "event": "2024-04-23",
+      "district": "futian",
+      "affected": true,
+      "peak_mm_h": 55,
+      "pred_peak_prob": 0.731,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-04-23",
+      "district": "longhua",
+      "affected": true,
+      "peak_mm_h": 55,
+      "pred_peak_prob": 0.742,
+      "actual_flood": 1,
+      "lead_h": 4
+    },
+    {
+      "event": "2024-04-23",
+      "district": "guangming",
+      "affected": true,
+      "peak_mm_h": 55,
+      "pred_peak_prob": 0.749,
+      "actual_flood": 1,
+      "lead_h": 4
+    },
+    {
+      "event": "2024-04-23",
+      "district": "luohu",
+      "affected": false,
+      "peak_mm_h": 55,
+      "pred_peak_prob": 0.758,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-04-23",
+      "district": "nanshan",
+      "affected": false,
+      "peak_mm_h": 55,
+      "pred_peak_prob": 0.731,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-04-23",
+      "district": "longgang",
+      "affected": false,
+      "peak_mm_h": 55,
+      "pred_peak_prob": 0.749,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-05-04",
+      "district": "futian",
+      "affected": false,
+      "peak_mm_h": 38.7,
+      "pred_peak_prob": 0.16,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-05-04",
+      "district": "luohu",
+      "affected": false,
+      "peak_mm_h": 38.7,
+      "pred_peak_prob": 0.223,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-05-04",
+      "district": "nanshan",
+      "affected": false,
+      "peak_mm_h": 38.7,
+      "pred_peak_prob": 0.16,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-08-19",
+      "district": "yantian",
+      "affected": true,
+      "peak_mm_h": 48,
+      "pred_peak_prob": 0.764,
+      "actual_flood": 1,
+      "lead_h": 6
+    },
+    {
+      "event": "2024-08-19",
+      "district": "baoan",
+      "affected": true,
+      "peak_mm_h": 48,
+      "pred_peak_prob": 0.777,
+      "actual_flood": 1,
+      "lead_h": 4
+    },
+    {
+      "event": "2024-08-19",
+      "district": "dapeng",
+      "affected": true,
+      "peak_mm_h": 48,
+      "pred_peak_prob": 0.775,
+      "actual_flood": 1,
+      "lead_h": 4
+    },
+    {
+      "event": "2024-08-19",
+      "district": "nanshan",
+      "affected": true,
+      "peak_mm_h": 48,
+      "pred_peak_prob": 0.756,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-08-19",
+      "district": "futian",
+      "affected": false,
+      "peak_mm_h": 48,
+      "pred_peak_prob": 0.756,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-08-19",
+      "district": "luohu",
+      "affected": false,
+      "peak_mm_h": 48,
+      "pred_peak_prob": 0.766,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2024-08-19",
+      "district": "longgang",
+      "affected": false,
+      "peak_mm_h": 48,
+      "pred_peak_prob": 0.761,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2014-03-30",
+      "district": "longgang",
+      "affected": true,
+      "peak_mm_h": 60,
+      "pred_peak_prob": 0.446,
+      "actual_flood": 1,
+      "lead_h": 0
+    },
+    {
+      "event": "2014-03-30",
+      "district": "luohu",
+      "affected": true,
+      "peak_mm_h": 60,
+      "pred_peak_prob": 0.478,
+      "actual_flood": 1,
+      "lead_h": 0
+    },
+    {
+      "event": "2014-03-30",
+      "district": "futian",
+      "affected": true,
+      "peak_mm_h": 60,
+      "pred_peak_prob": 0.311,
+      "actual_flood": 1,
+      "lead_h": null
+    },
+    {
+      "event": "2014-03-30",
+      "district": "baoan",
+      "affected": true,
+      "peak_mm_h": 60,
+      "pred_peak_prob": 0.509,
+      "actual_flood": 1,
+      "lead_h": 0
+    },
+    {
+      "event": "2014-03-30",
+      "district": "nanshan",
+      "affected": false,
+      "peak_mm_h": 60,
+      "pred_peak_prob": 0.311,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2014-03-30",
+      "district": "yantian",
+      "affected": false,
+      "peak_mm_h": 60,
+      "pred_peak_prob": 0.45,
+      "actual_flood": 0,
+      "lead_h": null
+    },
+    {
+      "event": "2014-03-30",
+      "district": "longhua",
+      "affected": false,
+      "peak_mm_h": 60,
+      "pred_peak_prob": 0.409,
+      "actual_flood": 0,
+      "lead_h": null
+    }
+  ]
+}

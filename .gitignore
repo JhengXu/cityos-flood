@@ -1,0 +1,29 @@
+# --- Node ---
+node_modules/
+frontend/dist/
+npm-debug.log*
+
+# --- Python ---
+backend/.venv/
+__pycache__/
+*.pyc
+
+# --- OS ---
+.DS_Store
+
+# --- 敏感凭据（勿提交）---
+.env
+*.env
+!.env.example
+backend/data/user/
+backend/data/.cache_*/
+ml/outputs/*.pt
+ml/outputs/*.pkl
+shenzhen-flood/data/raw/sz_*
+
+# --- 虚拟环境 / 缓存 ---
+.venv-ml
+.venv
+**/.venv*/
+ml/outputs/
+**/.cache_*/
