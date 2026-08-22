@@ -1,5 +1,5 @@
 // 轻量可重试 fetch，避免后端重启/短暂不可用时前端白屏报错
-async function fetchJSON(url, { retries = 4, backoff = 350 } = {}) {
+export async function fetchJSON(url, { retries = 4, backoff = 350 } = {}) {
   let last
   for (let i = 0; i < retries; i++) {
     try {

@@ -885,3 +885,13 @@ button:active { transform: scale(.97); }
 .pf-geo { display: flex; gap: 8px; margin: 12px 0 6px; }
 .pf-geo input { flex: 1; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 6px; color: #fff; padding: 7px 10px; font-size: 13px; }
 .pf-geo-res { font-size: 13px; color: #9fc0ff; margin-bottom: 6px; }
+
+/* ===== 真实数据态势 ===== */
+.rd-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+.rd-map { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 10px; }
+.realmap { height: 300px; border-radius: 10px; overflow: hidden; }
+.realmap .map { height: 300px; }
+.rd-legend { display: flex; gap: 14px; align-items: center; margin-top: 8px; font-size: 12px; color: #8C9098; }
+.rd-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.rd-cell { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 12px; }
+@media (max-width: 900px) { .rd-grid { grid-template-columns: 1fr; } }

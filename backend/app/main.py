@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import shenzhen, weather, model, events, simulate, dispatch, demo, userdata, hazard, spatial, accessibility, assimilation
+from . import shenzhen, weather, model, events, simulate, dispatch, demo, userdata, hazard, spatial, accessibility, assimilation, realdatav
 
 app = FastAPI(
     title="CITY OS · 深圳内涝预测 v2",
@@ -21,6 +21,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _warm_platform_cache():
+    """后台预热水位缓存，避免首次请求实时抓取慢。"""
+    import threading
+    def _w():
+        try:
+            from . import platform_fetch
+            platform_fetch.fetch_waterlevel()
+            print("[cityos] 平台水位缓存已预热")
+        except Exception as e:
+            print(f"[cityos] 平台水位预热失败: {e}")
+    threading.Thread(target=_w, daemon=True).start()
+
+
+@app.on_event("startup")
+def _startup():
+    _warm_platform_cache()
 
 _cache = {"ts": 0.0, "data": None, "ttl": 600}
 
@@ -359,3 +377,17 @@ def api_platform_geocode(q: str = "深圳市宝安区政府"):
     from . import platform_fetch
     loc = platform_fetch.geocode(q)
     return {"query": q, "location": loc}
+
+
+# ============ 真实数据资产 + 态势图 / 数据同化闭环 ============
+
+@app.get("/api/geo/realtime")
+def api_geo_realtime():
+    """真实数据态势：易涝点 + 实时水位站 + 真实降雨。"""
+    return realdatav.realtime_snapshot()
+
+
+@app.get("/api/assimilate/realtime")
+def api_assimilate_realtime(district: str = "baoan", observed_h: float = None, at_hour: int = 8):
+    """数据同化闭环：真实观测注入物理代理状态，返回修正后风险轨迹。"""
+    return realdatav.assimilate_realtime(district, observed_h, at_hour)

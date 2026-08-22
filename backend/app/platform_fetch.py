@@ -14,12 +14,16 @@ import io
 import csv
 import json
 import math
+import time
 from urllib.parse import quote
 
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()  # 读取项目根 .env
+
+_WL_CACHE = {"ts": 0.0, "data": None}
+_WL_TTL = 120  # 秒：水位结果缓存，避免重复慢下载（dashboard 多端并发更快）
 
 
 def _env(k):
@@ -168,8 +172,18 @@ def _latest_by_station(text, cache_dir):
 
 
 def fetch_waterlevel():
-    """实时水位：优先开放平台下载（短超时），失败回退缓存的真实数据。
-    返回 {source,count,flooding_count,top_stations,threshold_m}。"""
+    """实时水位：TTL 缓存 + 优先开放平台下载（短超时），失败回退缓存的真实数据。"""
+    now = time.time()
+    if _WL_CACHE["data"] and now - _WL_CACHE["ts"] < _WL_TTL:
+        return _WL_CACHE["data"]
+    result = _fetch_waterlevel_once()
+    _WL_CACHE["ts"] = now
+    _WL_CACHE["data"] = result
+    return result
+
+
+def _fetch_waterlevel_once():
+    """实时拉取水位（含缓存降级）。返回 {source,count,flooding_count,top_stations,threshold_m}。"""
     locations = _load_station_locations()
     cache_dir = os.path.join(os.path.dirname(__file__), "..", "data", ".cache_platform")
     latest, source = None, "cache(fallback)"
