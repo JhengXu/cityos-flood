@@ -4,6 +4,7 @@ import os
 
 # ============ 可复现性（§3.2：固定随机种子 / 固定数据切分）============
 SEED = 42
+DATASET_VERSION = "p0.1"
 SPLIT = {"train": 0.6, "val": 0.2, "test": 0.2}   # 按事件/时间切分，避免泄漏
 DISTRICT_SPLIT_MODE = "by_event"                   # by_event | by_time
 

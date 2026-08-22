@@ -15,6 +15,7 @@
 import os
 import csv
 import sys
+import zlib
 import numpy as np
 
 from . import config
@@ -119,7 +120,8 @@ def _load_user_samples():
             samples.append({
                 "X": X, "y": np.clip(flood, 0, 1).astype(np.float32),
                 "meta": {"event": "user-data", "district": did, "peak": round(float(rain.max()), 1),
-                         "affected": bool(flood.max() > 0)},
+                         "affected": bool(flood.max() > 0), "input_type": "user-supplied",
+                         "label_type": "observed"},
             })
     return samples
 
@@ -158,7 +160,9 @@ def build_samples(neg_per_event=3):
         neg_ids = [did for did in all_ids if did not in affected][:neg_per_event]
         for did in pos_ids + neg_ids:
             d = shenzhen.get_district(did)
-            r = np.random.default_rng(config.SEED + hash(ev["date"]) % 1000)
+            # Python 的 hash() 会随进程变化；CRC32 保证跨机器/进程得到相同演示序列。
+            event_seed = zlib.crc32(ev["date"].encode("utf-8")) % 1000
+            r = np.random.default_rng(config.SEED + event_seed)
             T = config.SEQ_LEN + config.HORIZON
             rain = np.clip(_storm(T, peak, shift=0.45 + 0.25 * r.random()) *
                            (0.7 + 0.5 * r.random()), 0, None)
@@ -175,7 +179,8 @@ def build_samples(neg_per_event=3):
             samples.append({
                 "X": X, "y": y,
                 "meta": {"event": ev["date"], "district": did, "peak": peak,
-                         "affected": bool(did in affected)},
+                         "affected": bool(did in affected), "input_type": "synthetic",
+                         "label_type": "proxy"},
             })
     # 合入用户上传的真实数据样本（backend/data/user/*.csv）
     samples.extend(_load_user_samples())
@@ -255,7 +260,21 @@ def load():
     """完整入口：构建数据集 -> 固定切分。返回 split 字典 + meta。"""
     samples = build_samples()
     X, Y, metas = _to_windows(samples)
-    return split(X, Y, metas)
+    result = split(X, Y, metas)
+    label_counts = {}
+    input_counts = {}
+    for meta in metas:
+        label = meta.get("label_type", "unknown")
+        source = meta.get("input_type", "unknown")
+        label_counts[label] = label_counts.get(label, 0) + 1
+        input_counts[source] = input_counts.get(source, 0) + 1
+    result["provenance"] = {
+        "label_counts": label_counts,
+        "input_counts": input_counts,
+        "uses_observed_labels": label_counts.get("observed", 0) > 0,
+        "uses_proxy_labels": label_counts.get("proxy", 0) > 0,
+    }
+    return result
 
 
 if __name__ == "__main__":

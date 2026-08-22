@@ -1,1 +1,1 @@
-czbm,district_id
+station_code,station_name,longitude,latitude,district_id,street,source,confidence

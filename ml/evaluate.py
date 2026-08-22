@@ -179,6 +179,13 @@ def run():
     d = load()
     model = load_model()
     rep = aggregate(d["test"][0], d["test"][1], d["test_meta"], model)
+    rep["dataset"] = {
+        "version": config.DATASET_VERSION,
+        "seed": config.SEED,
+        "split_mode": config.DISTRICT_SPLIT_MODE,
+        "split": config.SPLIT,
+        "provenance": d.get("provenance", {}),
+    }
     rep["replay"] = replay(model)
     os.makedirs(config.CACHE_DIR, exist_ok=True)
     with open(config.REPORT_PATH, "w", encoding="utf-8") as f:

@@ -27,3 +27,9 @@ shenzhen-flood/data/raw/sz_*
 **/.venv*/
 ml/outputs/
 **/.cache_*/
+
+# --- 灾害数据（仅提交契约、清单与空模板）---
+data/raw/**
+data/processed/**
+!data/raw/.gitkeep
+!data/processed/.gitkeep

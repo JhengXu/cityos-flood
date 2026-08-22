@@ -1,0 +1,17 @@
+{
+  "event_id": "YYYY-MM-DD_event-name",
+  "name": "事件名称",
+  "start_time": "YYYY-MM-DDT00:00:00+08:00",
+  "end_time": "YYYY-MM-DDT00:00:00+08:00",
+  "city": "深圳市",
+  "dataset_version": "p0.1",
+  "label_type": "observed",
+  "sources": [
+    {
+      "publisher": "数据发布单位",
+      "dataset": "数据集名称或编号",
+      "retrieved_at": "YYYY-MM-DD",
+      "license": "使用条件"
+    }
+  ]
+}

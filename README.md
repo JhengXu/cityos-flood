@@ -127,6 +127,18 @@ python -m ml.main all
 - **替换缝**：可将权威排水管网、DEM、下垫面、积水点和泵站台账接入 `backend/data/`；模型数据契约保持不变。
 - **部署边界**：本项目是研究与产品演示原型，不能直接替代气象、水务或应急部门的正式预警系统。
 
+### P0 真实监督标签接入
+
+核心监督标签是“某时刻、某位置实际发生了多深、持续多久的积水”，降雨只作为模型输入。数据优先级、空模板和来源状态见 [`data/README.md`](data/README.md) 与 [`data/manifests/sources.json`](data/manifests/sources.json)。
+
+将清洗后的事件数据放入 `data/processed/events/<event_id>/` 后执行：
+
+```bash
+python scripts/validate_supervision_data.py data/processed/events
+```
+
+只有校验通过的数据才能进入训练；训练报告会记录 `observed / derived / proxy` 标签数量，避免把真实降雨配代理标签误称为真实监督训练。
+
 ---
 
 ## 6. 晋级比赛可继续做的

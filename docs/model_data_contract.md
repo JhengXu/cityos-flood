@@ -5,6 +5,10 @@
 >       并落地「固定数据切分 + 固定随机种子 + 数据集版本化」的可复现验证体系。
 > 关联：方案 §3.1（真实数据监督训练）· §3.2（可复现验证体系）
 
+> P0 执行说明：本文件描述训练语义；可直接采集的规范字段、来源状态和空模板以
+> `data/README.md`、`data/manifests/sources.json`、`data/templates/` 为准。进入训练前必须运行
+> `python scripts/validate_supervision_data.py data/processed/events`。
+
 ---
 
 ## 0. 一句话

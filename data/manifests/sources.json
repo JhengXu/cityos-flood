@@ -1,0 +1,48 @@
+{
+  "dataset_version": "p0.1",
+  "updated_at": "2026-08-22",
+  "sources": [
+    {
+      "id": "sz_waterlogging_depth",
+      "priority": "P0",
+      "role": "supervision_label",
+      "description": "逐时或事件级积水点深度与持续时间",
+      "required_fields": ["timestamp", "longitude", "latitude", "depth_cm", "flooded"],
+      "status": "missing",
+      "acceptance": "覆盖至少三场独立事件，且能映射到街道或行政区"
+    },
+    {
+      "id": "sz_waterlevel_station",
+      "priority": "P0",
+      "role": "observation_and_assimilation",
+      "description": "积涝点或水位站时序观测及测站空间映射",
+      "required_fields": ["station_code", "timestamp", "level_m", "longitude", "latitude", "datum"],
+      "status": "partial",
+      "gap": "已有部分水位记录，但测站坐标、行政区映射和关键事件时段覆盖不完整"
+    },
+    {
+      "id": "sz_disaster_records",
+      "priority": "P0",
+      "role": "independent_evidence",
+      "description": "道路封闭、交通中断和重点设施受影响记录",
+      "required_fields": ["timestamp", "longitude", "latitude", "kind", "severity"],
+      "status": "missing"
+    },
+    {
+      "id": "sz_hourly_rainfall",
+      "priority": "P0",
+      "role": "model_driver",
+      "description": "自动站或格点逐时降雨，覆盖事件前72小时至事件后48小时",
+      "required_fields": ["timestamp", "station_id", "longitude", "latitude", "rainfall_mm"],
+      "status": "partial"
+    },
+    {
+      "id": "sz_tide",
+      "priority": "P1",
+      "role": "model_driver",
+      "description": "潮位站逐时观测与基准面",
+      "required_fields": ["timestamp", "station_id", "level_m", "datum"],
+      "status": "missing"
+    }
+  ]
+}

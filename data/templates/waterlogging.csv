@@ -1,0 +1,1 @@
+label_id,timestamp,end_timestamp,longitude,latitude,district_id,street,location,depth_cm,flooded,duration_min,source_id,quality_flag,label_type

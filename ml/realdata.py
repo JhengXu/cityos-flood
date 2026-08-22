@@ -52,7 +52,7 @@ def _default_p0_root():
 P0_ROOT = _default_p0_root()
 REAL_DATA_ENABLED = bool(P0_ROOT) and os.path.isdir(P0_ROOT)
 
-# 团队可补完的「测站→区」映射（CSV: czbm,district_id）；缺省为空 -> 城市级水位代理
+# 团队可补完的「测站→区」映射；缺省为空 -> 城市级水位代理
 STATION_DISTRICT_MAP_CSV = os.path.join(ROOT, "backend", "data", "station_district_map.csv")
 
 # —— 降雨质量控制的物理合理边界（理论文档 §3.1：异常极值 QC）——
@@ -243,13 +243,16 @@ def load_real_water_level():
 
 
 def _load_station_district_map():
-    """团队补完的测站→区映射（CSV: czbm,district_id）；缺省返回空。"""
+    """团队补完的测站→区映射；兼容旧字段 czbm。"""
     m = {}
     if not os.path.exists(STATION_DISTRICT_MAP_CSV):
         return m
     with open(STATION_DISTRICT_MAP_CSV, "r", encoding="utf-8") as f:
         for r in csv.DictReader(f):
-            m[str(r.get("czbm")).strip()] = str(r.get("district_id")).strip()
+            code = str(r.get("station_code") or r.get("czbm") or "").strip()
+            district = str(r.get("district_id") or "").strip()
+            if code and district:
+                m[code] = district
     return m
 
 
@@ -338,7 +341,9 @@ def build_real_event_samples():
             samples.append({
                 "X": X, "y": y,
                 "meta": {"event": date, "district": did, "peak": peak,
-                         "affected": bool(was_affected), "affected_by": affected_by, "real": True},
+                         "affected": bool(was_affected), "affected_by": affected_by,
+                         "real": True, "input_type": "observed",
+                         "label_type": "derived" if by_water else "proxy"},
             })
     return samples
 
