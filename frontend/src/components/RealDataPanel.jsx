@@ -28,6 +28,8 @@ export default function RealDataPanel() {
   const fps = data.floodpoints?.items || []
   const wlStations = (data.waterlevel?.top_stations || []).filter((s) => s.lat != null)
   const rain = data.rainfall?.items || []
+  const qc = data.waterlevel_quality || {}
+  const gis = data.gis_assets || {}
   const as = assim?.assimilation
 
   return (
@@ -43,6 +45,19 @@ export default function RealDataPanel() {
         <div className="ov-card" style={{ borderColor: '#1f7a4d' }}><div className="ov-k">真实降雨样本</div><div className="ov-v">{data.rainfall.count} 天</div></div>
         <div className="ov-card" style={{ borderColor: '#e08a1e' }}><div className="ov-k">水位站(含坐标)</div><div className="ov-v">{wlStations.length}</div></div>
         <div className="ov-card" style={{ borderColor: '#d6452a' }}><div className="ov-k">积涝预警站</div><div className="ov-v" style={{ color: data.waterlevel?.flooding_count ? '#d6452a' : '#1f7a4d' }}>{data.waterlevel?.flooding_count || 0}</div></div>
+        <div className="ov-card"><div className="ov-k">站点空间特征</div><div className="ov-v">{data.station_features?.count || 0}</div><div className="ov-sub">高程/不透水/距水体</div></div>
+        <div className="ov-card"><div className="ov-k">小时水位质控</div><div className="ov-v">{qc.hourly_rows || 0}</div><div className="ov-sub">{qc.stations || 0}站 · 北京时间</div></div>
+      </div>
+
+      <div className="wm-cell" style={{ marginTop: 14 }}>
+        <div className="wm-h">已接入 GIS 与水位质量报告</div>
+        <div className="prov-grid">
+          <div className="prov-line"><b>DEM / 不透水格网</b><span>{gis.dem_points || 0} / {gis.impervious_cells || 0}</span></div>
+          <div className="prov-line"><b>路段 / 水系要素</b><span>{gis.road_segments || 0} / {gis.water_features || 0}</span></div>
+          <div className="prov-line"><b>去除重复记录</b><span>{qc.duplicate_rows_removed || 0}</span></div>
+          <div className="prov-line"><b>原始时间说明</b><span>{qc.timezone_assumption || '—'}</span></div>
+        </div>
+        <div className="mc-note">原始水位没有时区字段，现按深圳市政数据本地时间解释并显式保存为 Asia/Shanghai (+08:00)；这是可审计假设，不等同于数据提供方元数据确认。</div>
       </div>
 
       <div className="rd-grid">

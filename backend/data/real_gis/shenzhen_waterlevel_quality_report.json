@@ -1,0 +1,17 @@
+{
+  "input_rows": 100000,
+  "unique_station_timestamps": 85493,
+  "duplicate_rows_removed": 14507,
+  "duplicate_conflict_groups": 0,
+  "hourly_rows": 6573,
+  "stations": 148,
+  "timezone": "Asia/Shanghai (+08:00)",
+  "timezone_assumption": "source export is Shenzhen municipal local time; original field had no offset",
+  "quality_rules": {
+    "valid_range_m": [
+      0,
+      3
+    ],
+    "duplicate_conflict": "same station/time with differing values"
+  }
+}

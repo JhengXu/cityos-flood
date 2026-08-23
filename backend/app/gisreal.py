@@ -21,8 +21,9 @@ import json
 import collections
 
 import numpy as np
+from .data_paths import REAL_GIS
 
-BASE = os.path.join(os.path.dirname(__file__), "..", "..", "..", "shenzhen-flood", "data", "processed")
+BASE = str(REAL_GIS)
 OUT = os.path.join(os.path.dirname(__file__), "..", "data", "gis_features.json")
 
 # 真实区名(中文) -> 模型 id

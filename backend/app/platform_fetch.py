@@ -89,8 +89,8 @@ def _download_csv(dataset_key):
 def _load_station_locations():
     """读取已地理编码的测站坐标（shenzhen-flood/data/processed/shenzhen_station_locations.csv）。
     返回 {station_code: {name,lat,lon}}。若不存在则返回空。"""
-    p = os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                     "shenzhen-flood", "data", "processed", "shenzhen_station_locations.csv")
+    from .data_paths import real_file
+    p = real_file("shenzhen_station_locations.csv")
     if not os.path.exists(p):
         return {}
     out = {}
@@ -121,8 +121,8 @@ def geocode(keyword, city="深圳"):
 def _load_cached_waterlevel():
     """回退源：读取已下载的清洗后真实水位数据（shenzhen-flood 产物）。
     返回每站最近一条。"""
-    p = os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                     "shenzhen-flood", "data", "processed", "shenzhen_waterlevel_clean.csv")
+    from .data_paths import real_file
+    p = real_file("shenzhen_waterlevel_hourly.csv")
     if not os.path.exists(p):
         return None
     latest = {}
@@ -131,9 +131,9 @@ def _load_cached_waterlevel():
             code = (row.get("station_code") or "").strip()
             if not code:
                 continue
-            ts = (row.get("time") or "").strip()
+            ts = (row.get("timestamp_bjt") or row.get("time") or "").strip()
             try:
-                lv = float(row.get("level_m") or 0.0)
+                lv = float(row.get("level_m_max") or row.get("level_m") or 0.0)
             except Exception:
                 lv = 0.0
             if code not in latest or ts > latest[code]["time"]:

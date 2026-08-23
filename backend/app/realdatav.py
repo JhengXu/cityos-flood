@@ -11,11 +11,13 @@ import csv
 from datetime import datetime, timedelta
 
 import numpy as np
+from .data_paths import real_file
 
-SZ_FLOOD = os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                        "shenzhen-flood", "data", "processed", "shenzhen_floodpoints_geo_v2.csv")
-SZ_RAIN = os.path.join(os.path.dirname(__file__), "..", "..", "..",
-                       "shenzhen-flood", "data", "processed", "shenzhen_chirps_rainfall.csv")
+SZ_FLOOD = real_file("shenzhen_floodpoints_geo_v2.csv")
+SZ_RAIN = real_file("shenzhen_chirps_rainfall.csv")
+SZ_STATION_FEATURES = real_file("shenzhen_station_features.csv")
+SZ_WATERLEVEL_HOURLY = real_file("shenzhen_waterlevel_hourly.csv")
+SZ_WATERLEVEL_QC = real_file("shenzhen_waterlevel_quality_report.json")
 
 
 def load_floodpoints(limit=400):
@@ -54,6 +56,37 @@ def load_rainfall(days=14):
     return rows[-days:]
 
 
+def load_station_features(limit=200):
+    if not os.path.exists(SZ_STATION_FEATURES):
+        return []
+    with open(SZ_STATION_FEATURES, encoding="utf-8-sig") as fh:
+        rows = list(csv.DictReader(fh))
+    return rows[:limit]
+
+
+def waterlevel_quality():
+    import json
+    if not os.path.exists(SZ_WATERLEVEL_QC):
+        return {"status": "missing"}
+    with open(SZ_WATERLEVEL_QC, encoding="utf-8") as fh:
+        return {"status": "ready", **json.load(fh)}
+
+
+def asset_summary():
+    def count_csv(name):
+        path = real_file(name)
+        if not os.path.exists(path): return 0
+        with open(path, encoding="utf-8-sig") as fh:
+            return max(0, sum(1 for _ in fh) - 1)
+    return {
+        "dem_points": count_csv("shenzhen_dem.csv"),
+        "impervious_cells": count_csv("shenzhen_builtup_density.csv"),
+        "road_segments": count_csv("shenzhen_roads_summary.csv"),
+        "district_boundaries": 9,
+        "water_features": 5965,
+    }
+
+
 def realtime_snapshot():
     """态势：真实易涝点 + 实时水位站 + 真实降雨。"""
     from . import platform_fetch
@@ -68,6 +101,9 @@ def realtime_snapshot():
         "floodpoints": {"count": len(fp), "items": fp},
         "waterlevel": wl,
         "rainfall": {"count": len(rain), "items": rain},
+        "station_features": {"count": len(load_station_features()), "items": load_station_features()},
+        "waterlevel_quality": waterlevel_quality(),
+        "gis_assets": asset_summary(),
         "provenance": {
             "floodpoints": "observed(206 真实易涝点，天地图/OSM 定位)",
             "waterlevel": "observed(深圳开放平台积涝点水位)",
