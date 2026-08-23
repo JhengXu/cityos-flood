@@ -194,7 +194,7 @@ export default function App() {
 
       <footer className="foot">
         CITY OS · 深圳城市内涝预测 v2 — 产品型 CEO 黑客松 MVP ｜ 数据：Open-Meteo 多点实时降雨 +
-        Open-Elevation 真实高程 + 真实历史内涝事件；城市特征其余项为代表性估算，可替换为权威 GIS/市政数据。
+        真实 DEM(高程/低洼) + ESA WorldCover(下垫面) + OSM 道路网(排水派生) + 真实历史内涝事件。
       </footer>
     </div>
   )

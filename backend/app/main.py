@@ -144,7 +144,7 @@ def _build_predict(forecast_days: int):
             "hybrid_feature_labels": model.FEATURE_LABELS,
             "lstm": {"input_dim": 5, "hidden": 16, "features": ["降雨超额", "累计", "脆弱性", "排水标准", "潮位"]},
             "levels": model.RISK_LEVELS,
-            "notes": "城市特征中高程来自 Open-Elevation 真实 DEM、历史指数来自真实内涝事件库；排水/下垫面等为代表性估算，应替换为权威 GIS。LSTM 权重由物理教师模型合成序列训练并缓存。",
+            "notes": "城市特征均来自真实数据/推导：高程/低洼来自真实 DEM、下垫面(不透水)来自真实 WorldCover、排水标准由真实 OSM 道路网+WorldCover+DEM 派生、历史指数来自真实内涝事件库。LSTM 权重由物理教师模型合成序列训练并缓存。",
         },
         "hazard_model": {
             "name": "暴雨—产流—积水 物理代理（理论 §3.3 节点状态方程）",
@@ -158,7 +158,7 @@ def _build_predict(forecast_days: int):
             "district_risk_surrogate": "estimated（§3.3 物理代理，α,β 数据校准）",
             "dem_elevation": "observed(Open-Elevation)",
             "historical_flood_index": "observed(真实内涝事件库)",
-            "drainage_design": "assumed(代表性估算，应替换权威 GIS)",
+            "drainage_design": "observed-derive(真实 OSM 道路网+WorldCover+DEM 派生)",
             "note": "各信号按 理论 §16 标注 observed/estimated/assumed；前端应据此着色区分。",
         },
     }

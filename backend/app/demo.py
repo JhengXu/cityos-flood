@@ -85,7 +85,7 @@ def get_ontology():
         "city": shenzhen.CITY,
         "districts": districts,
         "model": "城市 3D 本体（Ontology）v0.1",
-        "note": "高程来自真实 DEM；历史指数来自真实内涝事件；排水/下垫面为代表性估算，可替换权威 GIS。",
+        "note": "高程/低洼/临海来自真实 DEM+WorldCover；排水标准由真实 OSM 道路网派生；下垫面(不透水)来自真实 WorldCover；历史指数来自真实内涝事件。",
     }
 
 
