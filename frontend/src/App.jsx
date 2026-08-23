@@ -21,6 +21,7 @@ import RealDataPanel from './components/RealDataPanel.jsx'
 import StreetRiskPanel from './components/StreetRiskPanel.jsx'
 import ProvenancePanel from './components/ProvenancePanel.jsx'
 import WorldModelPanel from './components/WorldModelPanel.jsx'
+import OceanBoundaryPanel from './components/OceanBoundaryPanel.jsx'
 
 export default function App() {
   const [data, setData] = useState(null)
@@ -182,6 +183,9 @@ export default function App() {
               SIMULATE · 情景推演沙盘
               <span className="st-sub">台风 + 天文大潮 / 泵站降效 / 极端暴雨 → 全城影响推演与处置闭环</span>
             </div>
+            <ErrorBoundary fallback={<div className="card"><div className="err-box">海洋边界条件模块加载失败</div></div>}>
+              <OceanBoundaryPanel sim={sim} />
+            </ErrorBoundary>
             <ScenarioPanel onRun={runSim} loading={simLoading} />
             <div className="grid">
               <SimulateChart sim={sim} selected={simSel} onSelect={setSimSel} />

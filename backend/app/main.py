@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import shenzhen, weather, model, events, simulate, dispatch, demo, userdata, hazard, spatial, accessibility, assimilation, realdatav, streets
+from . import shenzhen, weather, model, events, simulate, dispatch, demo, userdata, hazard, spatial, accessibility, assimilation, realdatav, streets, ocean
 
 app = FastAPI(
     title="CITY OS · 深圳内涝预测 v2",
@@ -260,16 +260,80 @@ def get_simulate(
     peak_offset_h: int = 18,
     drainage_factor: float = 1.0,
     tide_raise: float = 0.0,
+    tide_amplitude_m: float = 0.75,
+    tide_phase_h: float = 0.0,
+    surge_peak_m: float = 0.0,
+    surge_peak_offset_h: float = 20.0,
+    surge_duration_h: float = 12.0,
+    rain_tide_peak_offset_h: Optional[float] = None,
 ):
     if preset and preset in simulate.SCENARIOS:
         sc = {k: v for k, v in simulate.SCENARIOS[preset].items() if k != "label"}
     else:
         sc = dict(rainfall_multiplier=rainfall_multiplier, add_peak_mm=add_peak_mm,
-                  peak_offset_h=peak_offset_h, drainage_factor=drainage_factor, tide_raise=tide_raise)
+                  peak_offset_h=peak_offset_h, drainage_factor=drainage_factor,
+                  tide_raise=tide_raise, tide_amplitude_m=tide_amplitude_m,
+                  tide_phase_h=tide_phase_h, surge_peak_m=surge_peak_m,
+                  surge_peak_offset_h=surge_peak_offset_h,
+                  surge_duration_h=surge_duration_h)
+        if rain_tide_peak_offset_h is not None:
+            sc["rain_tide_peak_offset_h"] = rain_tide_peak_offset_h
     res = simulate.simulate(sc)
     res["scale"] = "district·hourly scenario"
     res["simulated"] = True
     return res
+
+
+@app.get("/api/ocean/boundary")
+def get_ocean_boundary(
+    forecast_days: int = Query(3, ge=1, le=7),
+    tide_amplitude_m: float = 0.75,
+    tide_phase_h: float = 0.0,
+    surge_peak_m: float = 0.0,
+    surge_peak_offset_h: float = 20.0,
+    surge_duration_h: float = 12.0,
+):
+    """调和潮 + 参数化风暴增水预览；明确为预测/模拟代理而非潮位站实测。"""
+    fc = _get_forecast(forecast_days)
+    scenario = dict(tide_amplitude_m=tide_amplitude_m, tide_phase_h=tide_phase_h,
+                    surge_peak_m=surge_peak_m, surge_peak_offset_h=surge_peak_offset_h,
+                    surge_duration_h=surge_duration_h)
+    return ocean.build_boundary(fc["times"], scenario, fc.get("city"))
+
+
+@app.get("/api/ocean/catalog")
+def get_ocean_catalog():
+    """站点/岸段目录与事件采集清单；catalogued 不代表已有观测。"""
+    import csv
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1] / "data"
+    def read_csv(name):
+        with (root / name).open(encoding="utf-8-sig") as fh:
+            return list(csv.DictReader(fh))
+    return {
+        "stations": read_csv("ocean_stations.csv"),
+        "events": read_csv("ocean_events.csv"),
+        "district_boundaries": ocean.DISTRICT_BOUNDARIES,
+        "observation_status": "awaiting_source_data",
+        "datum_guard": "different datums must not be compared before traceable conversion",
+    }
+
+
+@app.get("/api/ocean/offset-experiment")
+def get_ocean_offset_experiment(forecast_days: int = Query(3, ge=1, le=3)):
+    """固定海洋/降雨强度，仅改变雨峰−潮峰时间差。"""
+    rows = []
+    for offset in (-6, 0, 6):
+        sc = dict(rainfall_multiplier=1.3, add_peak_mm=22, drainage_factor=1.0,
+                  tide_amplitude_m=0.95, surge_peak_m=0.65,
+                  surge_peak_offset_h=20, surge_duration_h=14,
+                  rain_tide_peak_offset_h=offset)
+        result = simulate.simulate(sc, forecast_days=forecast_days)
+        worst = max(result["districts"], key=lambda d: d["scenario_peak"]["prob"])
+        rows.append({"offset_h": offset, "label": "提前6小时" if offset < 0 else "同时发生" if offset == 0 else "滞后6小时",
+                     "worst_district": worst["name"], "peak_probability": worst["scenario_peak"]["prob"],
+                     "compound_index": result["ocean"]["compound_index"]})
+    return {"controlled_variables": "same rainfall amount and same ocean boundary; peak timing only", "results": rows}
 
 
 @app.post("/api/simulate")

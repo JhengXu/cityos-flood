@@ -1,0 +1,7 @@
+station_id,name,longitude,latitude,coast,districts,datum,status,source,role
+chiwan,赤湾站,,,深圳湾,"futian,nanshan",1985国家高程基准,catalogued,深圳市沿海风暴潮预警地方标准,primary
+shenzhen_temp,深圳临时验潮站,,,珠江口,"nanshan,baoan",1985国家高程基准,catalogued,深圳市沿海风暴潮预警地方标准,primary
+yantian,盐田站,,,大鹏湾,"yantian,dapeng",1985国家高程基准,catalogued,深圳市沿海风暴潮预警地方标准,primary
+huizhou,惠州站,,,大亚湾,dapeng,1985国家高程基准,catalogued,深圳市沿海风暴潮预警地方标准,reference
+tsim_bei_tsui,尖鼻咀站,,,珠江口西岸,"baoan,nanshan",香港海图基准,catalogued,香港天文台,reference
+tai_miu_wan,大庙湾站,,,大鹏湾外海,"yantian,dapeng",香港海图基准,catalogued,香港天文台,reference
