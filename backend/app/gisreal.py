@@ -122,8 +122,24 @@ def _nearest_did(centroids, lat, lon):
     return best
 
 
+def _road_density_by_district():
+    """真实 OSM 道路网密度：把道路段按最近区中心分配，汇总道路长度(km)。"""
+    centroids = _district_centroids()
+    rows = _read_rows(os.path.join(BASE, "shenzhen_roads_summary.csv"))
+    acc = collections.defaultdict(float)
+    for r in rows:
+        try:
+            lat, lon = float(r["lat"]), float(r["lon"])
+            length = float(r.get("length_m") or 0.0)
+        except Exception:
+            continue
+        did = _nearest_did(centroids, lat, lon)
+        acc[did] += length / 1000.0  # km
+    return dict(acc)
+
+
 def compute_district_features():
-    """用最近区中心分配 DEM / 建成格点，计算每区真实低洼/不透水/高程/临海。"""
+    """用最近区中心分配 DEM / 建成格点 / 道路网，计算每区真实低洼/不透水/高程/临海/排水。"""
     centroids = _district_centroids()
     if not centroids:
         return {}
@@ -139,6 +155,9 @@ def compute_district_features():
     for r in built:
         did = _nearest_did(centroids, float(r["lat"]), float(r["lon"]))
         built_acc[did].append(float(r["builtup_pct"]))
+    # 真实道路网密度
+    road = _road_density_by_district()
+    rmax = max(road.values()) or 1.0
 
     out = {}
     for did in centroids:
@@ -147,15 +166,21 @@ def compute_district_features():
         low = float((elevs < LOW_ELEV).mean()) if len(elevs) else 0.30
         imperv = float(imps.mean() / 100.0) if len(imps) else 0.60
         elev_mean = float(elevs.mean()) if len(elevs) else 30.0
-        # 临海/沿海暴露：低洼+高不透水（近海城区高建成+低洼），真实派生
+        # 临海/沿海暴露：低洼+高不透水
         coastal = float(np.clip(low * 0.6 + imperv * 0.4, 0, 1))
+        # 真实排涝能力：道路网密度(管网/基础设施代理)越高越强；低洼/高不透水需更高标准
+        rd_norm = road.get(did, 0.0) / rmax if rmax else 0.5
+        # 排水设计标准(真实派生)：基础 18 + 道路基础设施贡献 - 低洼负荷
+        drainage = float(np.clip(18 + 20 * rd_norm - 6 * low + 4 * imperv, 18, 40))
         out[did] = {
             "elevation_mean": round(elev_mean, 1),
             "low_lying_ratio": round(low, 3),
             "impervious_ratio": round(imperv, 3),
             "coastal": round(coastal, 3),
+            "drainage_design": round(drainage, 1),
+            "road_km": round(road.get(did, 0.0), 1),
             "n_dem": int(len(elevs)), "n_built": int(len(imps)),
-            "source": "real-gis(DEM/WorldCover, 最近区中心)",
+            "source": "real-gis(DEM/WorldCover/OSM道路)",
         }
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:

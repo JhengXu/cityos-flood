@@ -4,89 +4,109 @@
     "low_lying_ratio": 0.4,
     "impervious_ratio": 0.299,
     "coastal": 0.36,
+    "drainage_design": 23.1,
+    "road_km": 788.6,
     "n_dem": 20,
     "n_built": 889,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "luohu": {
     "elevation_mean": 59.8,
     "low_lying_ratio": 0.0,
     "impervious_ratio": 0.354,
     "coastal": 0.142,
+    "drainage_design": 25.2,
+    "road_km": 720.5,
     "n_dem": 20,
     "n_built": 834,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "nanshan": {
     "elevation_mean": 27.2,
     "low_lying_ratio": 0.56,
     "impervious_ratio": 0.317,
     "coastal": 0.463,
+    "drainage_design": 22.5,
+    "road_km": 826.2,
     "n_dem": 25,
     "n_built": 837,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "baoan": {
     "elevation_mean": 6.4,
     "low_lying_ratio": 0.842,
     "impervious_ratio": 0.174,
     "coastal": 0.575,
+    "drainage_design": 22.0,
+    "road_km": 1045.6,
     "n_dem": 57,
     "n_built": 2298,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "longgang": {
     "elevation_mean": 71.8,
     "low_lying_ratio": 0.0,
     "impervious_ratio": 0.353,
     "coastal": 0.141,
+    "drainage_design": 30.4,
+    "road_km": 1362.1,
     "n_dem": 45,
     "n_built": 1945,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "yantian": {
     "elevation_mean": 70.8,
     "low_lying_ratio": 0.561,
     "impervious_ratio": 0.063,
     "coastal": 0.362,
+    "drainage_design": 18.0,
+    "road_km": 278.3,
     "n_dem": 41,
     "n_built": 1684,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "longhua": {
     "elevation_mean": 79.1,
     "low_lying_ratio": 0.0,
     "impervious_ratio": 0.518,
     "coastal": 0.207,
+    "drainage_design": 30.6,
+    "road_km": 1315.3,
     "n_dem": 26,
     "n_built": 1214,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "pingshan": {
     "elevation_mean": 87.8,
     "low_lying_ratio": 0.036,
     "impervious_ratio": 0.28,
     "coastal": 0.134,
+    "drainage_design": 30.6,
+    "road_km": 1458.1,
     "n_dem": 55,
     "n_built": 2397,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "guangming": {
     "elevation_mean": 55.2,
     "low_lying_ratio": 0.219,
     "impervious_ratio": 0.362,
     "coastal": 0.276,
+    "drainage_design": 38.1,
+    "road_km": 2488.9,
     "n_dem": 73,
     "n_built": 3028,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   },
   "dapeng": {
     "elevation_mean": 67.4,
     "low_lying_ratio": 0.542,
     "impervious_ratio": 0.063,
     "coastal": 0.35,
+    "drainage_design": 22.2,
+    "road_km": 896.3,
     "n_dem": 118,
     "n_built": 4842,
-    "source": "real-gis(DEM/WorldCover, 最近区中心)"
+    "source": "real-gis(DEM/WorldCover/OSM道路)"
   }
 }

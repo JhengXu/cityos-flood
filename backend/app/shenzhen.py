@@ -103,11 +103,16 @@ def _enrich():
         # 真实 GIS 特征（DEM 低洼 / WorldCover 不透水 / 临海），替换估算
         g = gis.get(d["id"])
         if g:
-            d["low_lying_ratio"] = g["low_lying_ratio"]
-            d["impervious_ratio"] = g["impervious_ratio"]
-            d["coastal"] = g["coastal"]
+            d["low_lying_ratio"] = g.get("low_lying_ratio", d["low_lying_ratio"])
+            d["impervious_ratio"] = g.get("impervious_ratio", d["impervious_ratio"])
+            d["coastal"] = g.get("coastal", d["coastal"])
+            if "drainage_design" in g:
+                d["drainage_design"] = g["drainage_design"]   # 真实派生排水标准
             # 用区级真实高程均值兜底更可信（Open-Elevation 单点 vs 区域 DEM）
-            d["gis_note"] = f"真实GIS: DEM均值{g['elevation_mean']}m, 低洼{g['low_lying_ratio']}, 不透水{g['impervious_ratio']}, 临海{g['coastal']}"
+            d["gis_note"] = (f"真实GIS: DEM均值{g.get('elevation_mean')}m, "
+                             f"低洼{d['low_lying_ratio']}, 不透水{d['impervious_ratio']}, "
+                             f"临海{d['coastal']}, 排水{d['drainage_design']}mm/h"
+                             f"(道路网{round(g.get('road_km',0),1)}km)")
     geo.flush_cache()
 
 
