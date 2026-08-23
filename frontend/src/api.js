@@ -180,3 +180,7 @@ export async function getPlatformGeocode(q) {
 export async function getStreetRisk(forecastDays = 2) {
   return fetchJSON(`/api/risk/street?forecast_days=${forecastDays}`)
 }
+
+export async function getGridRisk(forecastDays = 2, res = 0.018) {
+  return fetchJSON(`/api/risk/grid?forecast_days=${forecastDays}&res=${res}`)
+}

@@ -895,3 +895,9 @@ button:active { transform: scale(.97); }
 .rd-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; margin-right: 4px; }
 .rd-cell { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 12px; }
 @media (max-width: 900px) { .rd-grid { grid-template-columns: 1fr; } }
+
+/* ===== 地图热力模式切换 ===== */
+.map-mode { float: right; display: flex; gap: 6px; align-items: center; }
+.map-title { overflow: hidden; }
+.map-title .mini.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+.hint8 { color: #8C9098; font-size: 11px; }

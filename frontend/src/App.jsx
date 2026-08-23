@@ -129,7 +129,7 @@ export default function App() {
                 </div>
               }
             >
-              <RiskMap data={data} view={view} />
+              <RiskMap data={data} view={view} hour={hour} />
             </ErrorBoundary>
             <div className="col">
               <RainfallChart data={data} hour={hour} setHour={setHour} />

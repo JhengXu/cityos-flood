@@ -55,7 +55,7 @@ def build_street_risk(forecast_days=3):
             excess = max(0.0, float(p) - C)
             # 街道级风险：超额 × 街道脆弱性 + 前期饱和
             z = (excess / 50.0) * V + 0.3 * (cum / 150.0)
-            prob = model.MODEL._sigmoid(-4.0 * (z - 0.5))
+            prob = model.MODEL._sigmoid(4.0 * (z - 0.5))
             risk.append(round(float(prob), 4))
         out.append({
             "name": name, "district_id": did, "lat": lat, "lon": lon,

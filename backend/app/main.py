@@ -399,3 +399,12 @@ def api_assimilate_realtime(district: str = "baoan", observed_h: float = None, a
 def api_risk_street(forecast_days: int = 3):
     """街道级内涝风险：30 个街道采样点，真实高程/不透水 + 街道降雨。"""
     return streets.get_street_risk(forecast_days)
+
+
+# ============ 分区分时风险热力 · 加密网格 ============
+
+@app.get("/api/risk/grid")
+def api_risk_grid(forecast_days: int = 2, res: float = 0.018):
+    """加密网格内涝风险热力（~2km 格，真实 DEM/WorldCover + 街道降雨）。"""
+    from . import gridrisk
+    return gridrisk.get_grid_risk(forecast_days, res)
