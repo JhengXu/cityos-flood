@@ -1,17 +1,24 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip } from 'react-leaflet'
-import { fmtTime, levelColor, LEVEL_LABELS, getGridRisk } from '../api'
+import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip, ImageOverlay } from 'react-leaflet'
+import { fmtTime, levelColor, LEVEL_LABELS, getGridRisk, getGridImageBBox } from '../api'
 
 export default function RiskMap({ data, view, hour }) {
   const center = data.city.center
   const [grid, setGrid] = useState(null)
   const [mode, setMode] = useState('risk')   // risk | vuln
+  const [img, setImg] = useState(false)      // 500m 精网格热力开关
+  const [imgBounds, setImgBounds] = useState(null)
 
   useEffect(() => {
     getGridRisk(2, 0.018).then((d) => setGrid(d)).catch(() => setGrid(null))
   }, [])
 
+  // 500m 网格 bbox（深圳 22.44-22.88, 113.72-114.66）——与后端一致，避免依赖 HEAD 头
+  const SZ_BBOX = { south: 22.44, west: 113.72, north: 22.88, east: 114.66 }
+  useEffect(() => { if (img) setImgBounds(SZ_BBOX); else setImgBounds(null) }, [img])
+
   const cells = grid?.cells || []
+  const imgURL = '/api/risk/grid/image?res=0.0045&_=' + (img ? '1' : '0')
   return (
     <div className="map-wrap">
       <div className="map-title">
@@ -19,6 +26,7 @@ export default function RiskMap({ data, view, hour }) {
         <span className="map-mode">
           <button className={`mini ${mode === 'risk' ? 'on' : ''}`} onClick={() => setMode('risk')}>净风险</button>
           <button className={`mini ${mode === 'vuln' ? 'on' : ''}`} onClick={() => setMode('vuln')}>本底脆弱性</button>
+          <button className={`mini ${img ? 'on' : ''}`} onClick={() => setImg((v) => !v)}>500m 精网格</button>
           <span className="hint8">{grid ? `${grid.n_cells} 格 · ${(grid.resolution_deg * 111).toFixed(1)}km` : ''}</span>
         </span>
       </div>
@@ -27,6 +35,10 @@ export default function RiskMap({ data, view, hour }) {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution="&copy; OpenStreetMap &copy; CARTO"
         />
+        {/* 500m 精网格热力（PNG 层） */}
+        {img && imgBounds && (
+          <ImageOverlay url={imgURL} bounds={[[imgBounds.south, imgBounds.west], [imgBounds.north, imgBounds.east]]} opacity={0.9} />
+        )}
         {/* 细粒度网格热力 */}
         {cells.map((c, i) => {
           const val = mode === 'risk' ? (c.risk[Math.min(hour, c.risk.length - 1)] || 0) : c.vulnerability

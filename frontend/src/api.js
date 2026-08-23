@@ -184,3 +184,11 @@ export async function getStreetRisk(forecastDays = 2) {
 export async function getGridRisk(forecastDays = 2, res = 0.018) {
   return fetchJSON(`/api/risk/grid?forecast_days=${forecastDays}&res=${res}`)
 }
+
+export async function getGridImageBBox() {
+  const r = await fetch('/api/risk/grid/image?res=0.0045', { method: 'HEAD' })
+  return { url: `/api/risk/grid/image?res=0.0045`, ...bboxFromHeaders(r) }
+}
+function bboxFromHeaders(r) {
+  return { south: +r.headers.get('X-BBox-South'), west: +r.headers.get('X-BBox-West'), north: +r.headers.get('X-BBox-North'), east: +r.headers.get('X-BBox-East') }
+}

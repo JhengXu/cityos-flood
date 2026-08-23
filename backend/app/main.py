@@ -408,3 +408,16 @@ def api_risk_grid(forecast_days: int = 2, res: float = 0.018):
     """加密网格内涝风险热力（~2km 格，真实 DEM/WorldCover + 街道降雨）。"""
     from . import gridrisk
     return gridrisk.get_grid_risk(forecast_days, res)
+
+
+@app.get("/api/risk/grid/image")
+def api_risk_grid_image(res: float = 0.0045, forecast_days: int = 2):
+    """500m 精度风险热力 PNG（一像素=500m 格）。bbox 通过响应头返回。"""
+    from fastapi.responses import Response
+    from . import gridrisk
+    png, bbox = gridrisk.get_grid_image(res, forecast_days)
+    return Response(content=png, media_type="image/png", headers={
+        "X-BBox-South": str(bbox["south"]), "X-BBox-West": str(bbox["west"]),
+        "X-BBox-North": str(bbox["north"]), "X-BBox-East": str(bbox["east"]),
+        "X-Res-Deg": str(res),
+    })
