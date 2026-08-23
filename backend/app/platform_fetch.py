@@ -171,46 +171,10 @@ def _latest_by_station(text, cache_dir):
     return latest
 
 
-def fetch_waterlevel():
-    """实时水位：TTL 缓存 + 优先开放平台下载（短超时），失败回退缓存的真实数据。"""
-    now = time.time()
-    if _WL_CACHE["data"] and now - _WL_CACHE["ts"] < _WL_TTL:
-        return _WL_CACHE["data"]
-    result = _fetch_waterlevel_once()
-    _WL_CACHE["ts"] = now
-    _WL_CACHE["data"] = result
-    return result
+_SZ_WL_CACHE = None  # shenzhen-flood 真实水位的内存缓存解析结果
 
 
-def _fetch_waterlevel_once():
-    """实时拉取水位（含缓存降级）。返回 {source,count,flooding_count,top_stations,threshold_m}。"""
-    locations = _load_station_locations()
-    cache_dir = os.path.join(os.path.dirname(__file__), "..", "data", ".cache_platform")
-    latest, source = None, "cache(fallback)"
-    try:
-        text = _download_csv("waterlevel")            # 短超时见 _download_csv
-        latest = _latest_by_station(text, cache_dir)
-        source = "opendata.sz.gov.cn(live)"
-    except Exception as e:
-        latest = None
-        err = str(e)
-        # 尝试本地缓存（若 open api 下载成功过一次）
-        lc = os.path.join(cache_dir, "realtime_waterlevel.csv")
-        if os.path.exists(lc):
-            latest = {}
-            with open(lc, "r", encoding="utf-8") as f:
-                for row in csv.DictReader(f):
-                    latest[row["code"]] = {"time": row["time"], "level": float(row["level"])}
-            source = "cache(live-last)"
-        else:
-            cached = _load_cached_waterlevel()
-            if cached:
-                latest = cached
-                source = "cache(shenzhen-flood 真实数据)"
-            else:
-                return {"source": source, "ok": False, "error": err, "count": 0, "flooding_count": 0,
-                        "top_stations": [], "threshold_m": LEVEL_THRESHOLD}
-
+def _build_snapshot(latest, source, locations):
     stations = []
     for code, rec in latest.items():
         loc = locations.get(code, {})
@@ -227,6 +191,42 @@ def _fetch_waterlevel_once():
     flooding = [s for s in stations if s["flooding"]]
     return {"source": source, "ok": True, "count": len(stations), "flooding_count": len(flooding),
             "top_stations": stations[:50], "threshold_m": LEVEL_THRESHOLD}
+
+
+def fetch_waterlevel():
+    """水位快照：优先新鲜 live 缓存，否则用 shenzhen-flood 缓存的真实数据（秒回）。
+    真正实时直播由后台 `_refresh_live()`（启动预热/手动刷新）异步更新。"""
+    global _SZ_WL_CACHE
+    now = time.time()
+    if _WL_CACHE["data"] and now - _WL_CACHE["ts"] < _WL_TTL:
+        return _WL_CACHE["data"]                      # live 新鲜
+    if _SZ_WL_CACHE is None:
+        _SZ_WL_CACHE = _load_cached_waterlevel()       # shenzhen-flood 真实数据（内存缓存）
+    locations = _load_station_locations()
+    if _SZ_WL_CACHE:
+        return _build_snapshot(_SZ_WL_CACHE, "cache(shenzhen-flood 真实数据)", locations)
+    # 无任何缓存：退而求其次尝试 live（短超时）
+    try:
+        text = _download_csv("waterlevel")
+        latest = _latest_by_station(text, os.path.join(
+            os.path.dirname(__file__), "..", "data", ".cache_platform"))
+        return _build_snapshot(latest, "opendata.sz.gov.cn(live)", locations)
+    except Exception as e:
+        return {"source": "none", "ok": False, "error": str(e), "count": 0,
+                "flooding_count": 0, "top_stations": [], "threshold_m": LEVEL_THRESHOLD}
+
+
+def _refresh_live():
+    """后台尝试 live 抓取；成功则更新 _WL_CACHE（此后 fetch_waterlevel 用 live）。"""
+    try:
+        text = _download_csv("waterlevel")
+        latest = _latest_by_station(text, os.path.join(
+            os.path.dirname(__file__), "..", "data", ".cache_platform"))
+        _WL_CACHE["data"] = _build_snapshot(latest, "opendata.sz.gov.cn(live)", _load_station_locations())
+        _WL_CACHE["ts"] = time.time()
+        return True
+    except Exception:
+        return False
 
 
 def fetch_realtime():

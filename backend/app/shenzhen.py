@@ -76,16 +76,38 @@ SUBDISTRICT_POINTS = [
 ]
 
 
+def _load_gis_features():
+    """读取从真实 GIS（DEM/WorldCover）计算的区特征缓存，替换估算值。"""
+    import os, json
+    p = os.path.join(os.path.dirname(__file__), "..", "data", "gis_features.json")
+    if not os.path.exists(p):
+        return {}
+    try:
+        with open(p, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def _enrich():
-    """用真实 DEM 高程 + 真实历史事件索引，覆盖估算初值。"""
+    """用真实数据覆盖估算初值：真实 DEM 高程 + 真实事件指数 + 真实 GIS 低洼/不透水/临海。"""
     # 1) 真实高程（批量，缓存）
     coords = [tuple(d["center"]) for d in DISTRICTS]
     elevs = geo.get_elevations(coords)
     hidx = events.historical_index()
+    gis = _load_gis_features()
     for d in DISTRICTS:
         lat, lon = tuple(d["center"])
         d["elevation_mean"] = round(float(elevs.get((round(lat, 4), round(lon, 4)), d["elevation_mean"])), 1)
         d["historical_flood_index"] = hidx.get(d["id"], d["historical_flood_index"])
+        # 真实 GIS 特征（DEM 低洼 / WorldCover 不透水 / 临海），替换估算
+        g = gis.get(d["id"])
+        if g:
+            d["low_lying_ratio"] = g["low_lying_ratio"]
+            d["impervious_ratio"] = g["impervious_ratio"]
+            d["coastal"] = g["coastal"]
+            # 用区级真实高程均值兜底更可信（Open-Elevation 单点 vs 区域 DEM）
+            d["gis_note"] = f"真实GIS: DEM均值{g['elevation_mean']}m, 低洼{g['low_lying_ratio']}, 不透水{g['impervious_ratio']}, 临海{g['coastal']}"
     geo.flush_cache()
 
 

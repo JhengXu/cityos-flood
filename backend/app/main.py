@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import shenzhen, weather, model, events, simulate, dispatch, demo, userdata, hazard, spatial, accessibility, assimilation, realdatav
+from . import shenzhen, weather, model, events, simulate, dispatch, demo, userdata, hazard, spatial, accessibility, assimilation, realdatav, streets
 
 app = FastAPI(
     title="CITY OS · 深圳内涝预测 v2",
@@ -29,8 +29,8 @@ def _warm_platform_cache():
     def _w():
         try:
             from . import platform_fetch
-            platform_fetch.fetch_waterlevel()
-            print("[cityos] 平台水位缓存已预热")
+            ok = platform_fetch._refresh_live()
+            print(f"[cityos] 平台水位 live 刷新{'成功' if ok else '失败，使用缓存真实数据'}")
         except Exception as e:
             print(f"[cityos] 平台水位预热失败: {e}")
     threading.Thread(target=_w, daemon=True).start()
@@ -391,3 +391,11 @@ def api_geo_realtime():
 def api_assimilate_realtime(district: str = "baoan", observed_h: float = None, at_hour: int = 8):
     """数据同化闭环：真实观测注入物理代理状态，返回修正后风险轨迹。"""
     return realdatav.assimilate_realtime(district, observed_h, at_hour)
+
+
+# ============ 街道级风险（真实 GIS 特征，精确到街道采样点）============
+
+@app.get("/api/risk/street")
+def api_risk_street(forecast_days: int = 3):
+    """街道级内涝风险：30 个街道采样点，真实高程/不透水 + 街道降雨。"""
+    return streets.get_street_risk(forecast_days)

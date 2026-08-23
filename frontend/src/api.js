@@ -176,3 +176,7 @@ export async function getPlatformRealtime() {
 export async function getPlatformGeocode(q) {
   return fetchJSON(`/api/platform/geocode?q=${encodeURIComponent(q)}`)
 }
+
+export async function getStreetRisk(forecastDays = 2) {
+  return fetchJSON(`/api/risk/street?forecast_days=${forecastDays}`)
+}

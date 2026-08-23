@@ -18,6 +18,7 @@ import DataLabPanel from './components/DataLabPanel.jsx'
 import ModelComparisonPanel from './components/ModelComparisonPanel.jsx'
 import PlatformPanel from './components/PlatformPanel.jsx'
 import RealDataPanel from './components/RealDataPanel.jsx'
+import StreetRiskPanel from './components/StreetRiskPanel.jsx'
 import ProvenancePanel from './components/ProvenancePanel.jsx'
 import WorldModelPanel from './components/WorldModelPanel.jsx'
 
@@ -166,6 +167,9 @@ export default function App() {
             </ErrorBoundary>
             <ErrorBoundary fallback={<div className="card"><div className="err-box">真实数据态势加载失败</div></div>}>
               <RealDataPanel />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<div className="card"><div className="err-box">街道级风险加载失败</div></div>}>
+              <StreetRiskPanel />
             </ErrorBoundary>
             <ErrorBoundary fallback={<div className="card"><div className="err-box">验证模块加载失败</div></div>}>
               <VerifyPanel key={verifyKey} />

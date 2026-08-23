@@ -1,0 +1,242 @@
+[
+  {
+    "name": "市民中心",
+    "district_id": "futian",
+    "lat": 22.538,
+    "lon": 114.058,
+    "elevation": 9.0,
+    "impervious": 0.832
+  },
+  {
+    "name": "华强北",
+    "district_id": "futian",
+    "lat": 22.547,
+    "lon": 114.085,
+    "elevation": 29.0,
+    "impervious": 0.919
+  },
+  {
+    "name": "车公庙",
+    "district_id": "futian",
+    "lat": 22.53,
+    "lon": 114.03,
+    "elevation": 15.0,
+    "impervious": 0.158
+  },
+  {
+    "name": "东门",
+    "district_id": "luohu",
+    "lat": 22.545,
+    "lon": 114.12,
+    "elevation": 11.0,
+    "impervious": 0.816
+  },
+  {
+    "name": "罗湖口岸",
+    "district_id": "luohu",
+    "lat": 22.53,
+    "lon": 114.115,
+    "elevation": 10.0,
+    "impervious": 0.858
+  },
+  {
+    "name": "笋岗",
+    "district_id": "luohu",
+    "lat": 22.565,
+    "lon": 114.1,
+    "elevation": 11.0,
+    "impervious": 0.898
+  },
+  {
+    "name": "科技园",
+    "district_id": "nanshan",
+    "lat": 22.54,
+    "lon": 113.95,
+    "elevation": 2.0,
+    "impervious": 0.745
+  },
+  {
+    "name": "蛇口",
+    "district_id": "nanshan",
+    "lat": 22.48,
+    "lon": 113.88,
+    "elevation": 0.0,
+    "impervious": 0.527
+  },
+  {
+    "name": "前海",
+    "district_id": "nanshan",
+    "lat": 22.52,
+    "lon": 113.89,
+    "elevation": 0.0,
+    "impervious": 0.302
+  },
+  {
+    "name": "宝安中心",
+    "district_id": "baoan",
+    "lat": 22.555,
+    "lon": 113.88,
+    "elevation": 1.0,
+    "impervious": 0.485
+  },
+  {
+    "name": "福永",
+    "district_id": "baoan",
+    "lat": 22.65,
+    "lon": 113.81,
+    "elevation": -1.0,
+    "impervious": 0.977
+  },
+  {
+    "name": "沙井",
+    "district_id": "baoan",
+    "lat": 22.72,
+    "lon": 113.82,
+    "elevation": 14.0,
+    "impervious": 0.593
+  },
+  {
+    "name": "龙岗中心城",
+    "district_id": "longgang",
+    "lat": 22.72,
+    "lon": 114.21,
+    "elevation": 66.0,
+    "impervious": 0.582
+  },
+  {
+    "name": "布吉",
+    "district_id": "longgang",
+    "lat": 22.61,
+    "lon": 114.13,
+    "elevation": 64.0,
+    "impervious": 0.844
+  },
+  {
+    "name": "坂田",
+    "district_id": "longgang",
+    "lat": 22.68,
+    "lon": 114.06,
+    "elevation": 56.0,
+    "impervious": 0.571
+  },
+  {
+    "name": "沙头角",
+    "district_id": "yantian",
+    "lat": 22.56,
+    "lon": 114.23,
+    "elevation": 8.0,
+    "impervious": 0.681
+  },
+  {
+    "name": "盐田港",
+    "district_id": "yantian",
+    "lat": 22.59,
+    "lon": 114.27,
+    "elevation": 4.0,
+    "impervious": 0.684
+  },
+  {
+    "name": "梅沙",
+    "district_id": "yantian",
+    "lat": 22.6,
+    "lon": 114.3,
+    "elevation": 53.0,
+    "impervious": 0.616
+  },
+  {
+    "name": "龙华中心",
+    "district_id": "longhua",
+    "lat": 22.68,
+    "lon": 114.04,
+    "elevation": 56.0,
+    "impervious": 0.674
+  },
+  {
+    "name": "民治",
+    "district_id": "longhua",
+    "lat": 22.62,
+    "lon": 114.04,
+    "elevation": 82.0,
+    "impervious": 0.658
+  },
+  {
+    "name": "观澜",
+    "district_id": "longhua",
+    "lat": 22.72,
+    "lon": 114.03,
+    "elevation": 74.0,
+    "impervious": 0.753
+  },
+  {
+    "name": "坪山中心",
+    "district_id": "pingshan",
+    "lat": 22.69,
+    "lon": 114.33,
+    "elevation": 42.0,
+    "impervious": 0.668
+  },
+  {
+    "name": "坑梓",
+    "district_id": "pingshan",
+    "lat": 22.73,
+    "lon": 114.4,
+    "elevation": 44.0,
+    "impervious": 0.07
+  },
+  {
+    "name": "碧岭",
+    "district_id": "pingshan",
+    "lat": 22.66,
+    "lon": 114.31,
+    "elevation": 264.0,
+    "impervious": 0.0
+  },
+  {
+    "name": "光明中心",
+    "district_id": "guangming",
+    "lat": 22.75,
+    "lon": 113.95,
+    "elevation": 135.0,
+    "impervious": 0.185
+  },
+  {
+    "name": "公明",
+    "district_id": "guangming",
+    "lat": 22.73,
+    "lon": 113.9,
+    "elevation": 27.0,
+    "impervious": 0.854
+  },
+  {
+    "name": "科学城",
+    "district_id": "guangming",
+    "lat": 22.78,
+    "lon": 113.97,
+    "elevation": 33.0,
+    "impervious": 0.0
+  },
+  {
+    "name": "大鹏",
+    "district_id": "dapeng",
+    "lat": 22.61,
+    "lon": 114.5,
+    "elevation": 257.0,
+    "impervious": 0.003
+  },
+  {
+    "name": "葵涌",
+    "district_id": "dapeng",
+    "lat": 22.63,
+    "lon": 114.43,
+    "elevation": 264.0,
+    "impervious": 0.463
+  },
+  {
+    "name": "南澳",
+    "district_id": "dapeng",
+    "lat": 22.55,
+    "lon": 114.5,
+    "elevation": 0.0,
+    "impervious": 0.016
+  }
+]
