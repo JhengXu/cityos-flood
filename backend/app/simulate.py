@@ -7,13 +7,8 @@ SIMULATE 引擎：What-if 情景沙盘（如「台风 + 天文大潮」全城影
 """
 import numpy as np
 
-from . import weather, model, dispatch
+from . import weather, model, dispatch, ocean
 from .shenzhen import DISTRICTS, CITY
-
-
-def _tide_baseline(T):
-    t = np.arange(T)
-    return np.clip(0.5 + 0.2 * np.sin(2 * np.pi * t / 12.4), 0, 1)
 
 
 def _apply_scenario(rainfall_seq, scenario, spatial_weight=1.0):
@@ -33,8 +28,17 @@ def simulate(scenario, forecast_days=3):
     fc = weather.downscaled_forecast(forecast_days)
     times = fc["times"]
     T = len(times)
-    base_tide = _tide_baseline(T)
-    tide_raise = float(scenario.get("tide_raise", 0.0))
+    city_rain = fc.get("city") or []
+    base_ocean = ocean.build_boundary(times, {"surge_peak_m": 0.0}, city_rain)
+    scen_cfg = dict(scenario)
+    # 若指定雨潮错位，让额外降雨峰值相对海面峰值移动。
+    if "rain_tide_peak_offset_h" in scen_cfg:
+        preview = ocean.build_boundary(times, scen_cfg)
+        scen_cfg["peak_offset_h"] = int(np.clip(
+            preview["peak"]["index"] + float(scen_cfg["rain_tide_peak_offset_h"]), 0, max(0, T - 1)
+        ))
+    scen_city_rain = _apply_scenario(city_rain, scen_cfg)
+    scenario_ocean = ocean.build_boundary(times, scen_cfg, scen_city_rain)
     drainage_factor = float(scenario.get("drainage_factor", 1.0))
 
     districts_out = []
@@ -45,16 +49,22 @@ def simulate(scenario, forecast_days=3):
 
         base_rain = fc["districts"][d["id"]]
         base_cum = model.compute_cum_seq(base_rain)
-        Xb = model.build_seq_features(base_rain, base_cum, V, C, list(base_tide))
+        base_drain_factor = ocean.district_drainage_factor(
+            base_ocean["total_level_m"], d["id"], d["coastal"])
+        base_C = C * base_drain_factor
+        Xb = model.build_seq_features(base_rain, base_cum, V, base_C, base_ocean["tide_feature"])
         base_prob = model.SEQ_MODEL.net.predict_seq(Xb)
 
         # 台风降雨随海岸暴露度空间加权（沿海/低地更重），更贴近真实且增强区分度
         spatial_weight = 0.5 + 0.9 * d["coastal"]
-        scen_rain = _apply_scenario(base_rain, scenario, spatial_weight=spatial_weight)
+        scen_rain = _apply_scenario(base_rain, scen_cfg, spatial_weight=spatial_weight)
         scen_cum = model.compute_cum_seq(list(scen_rain))
-        C_eff = C * drainage_factor
-        scen_tide = np.clip(base_tide + tide_raise, 0, 1)
-        Xs = model.build_seq_features(list(scen_rain), scen_cum, V, C_eff, list(scen_tide))
+        ocean_factor = ocean.district_drainage_factor(
+            scenario_ocean["total_level_m"], d["id"], d["coastal"])
+        C_eff = C * drainage_factor * ocean_factor
+        Xs = model.build_seq_features(
+            list(scen_rain), scen_cum, V, C_eff, scenario_ocean["tide_feature"]
+        )
         scen_prob = model.SEQ_MODEL.net.predict_seq(Xs)
 
         def _peak(prob):
@@ -78,6 +88,9 @@ def simulate(scenario, forecast_days=3):
                               "level_label": model.RISK_LEVELS[s_lv], "prob": round(s_p, 4)},
             "delta_prob": round(s_p - b_p, 4),
             "vulnerability": V,
+            "coastal_exposure": d["coastal"],
+            "min_drainage_factor": round(float(np.min(ocean_factor) * drainage_factor), 3),
+            "ocean_boundary": ocean.DISTRICT_BOUNDARIES.get(d["id"], {"boundary": "内陆/河网", "stations": [], "gravity_share": 0.15, "pump_share": 0.85}),
         })
         # 用于预警：取情景与基线中的更高峰值
         pk_level = max(b_lv, s_lv)
@@ -86,7 +99,7 @@ def simulate(scenario, forecast_days=3):
         alert_inputs.append({
             "id": d["id"], "name": d["name"],
             "peak_level": pk_level, "peak_prob": pk_prob, "peak_index": pk_idx,
-            "tide_high": tide_raise >= 0.25,
+            "tide_high": (scenario_ocean["peak"]["total_level_m"] or 0) >= 0.8,
         })
 
     alerts = dispatch.generate_alerts(alert_inputs, times)
@@ -95,9 +108,10 @@ def simulate(scenario, forecast_days=3):
             __import__("datetime").timezone(__import__("datetime").timedelta(hours=8))
         ).isoformat(),
         "city": CITY,
-        "scenario": scenario,
+        "scenario": scen_cfg,
         "times": times,
-        "baseline_tide": [round(float(x), 3) for x in base_tide],
+        "baseline_tide": base_ocean["tide_feature"],
+        "ocean": scenario_ocean,
         "districts": districts_out,
         "alerts": alerts,
         "alert_count": len(alerts),
@@ -108,11 +122,19 @@ def simulate(scenario, forecast_days=3):
 # 预设情景（前端可直接选用）
 SCENARIOS = {
     "baseline": {"label": "现状预报（基线）", "rainfall_multiplier": 1.0, "add_peak_mm": 0,
-                 "peak_offset_h": 18, "drainage_factor": 1.0, "tide_raise": 0.0},
+                 "peak_offset_h": 18, "drainage_factor": 1.0, "surge_peak_m": 0.0},
     "typhoon_tide": {"label": "台风 + 天文大潮", "rainfall_multiplier": 1.3, "add_peak_mm": 22,
-                     "peak_offset_h": 20, "drainage_factor": 0.85, "tide_raise": 0.35},
+                     "drainage_factor": 0.85, "tide_amplitude_m": 0.95,
+                     "surge_peak_m": 0.65, "surge_peak_offset_h": 20,
+                     "surge_duration_h": 14, "rain_tide_peak_offset_h": 0},
+    "rain_6h_before_tide": {"label": "雨峰提前高潮6小时", "rainfall_multiplier": 1.3, "add_peak_mm": 22,
+                            "tide_amplitude_m": 0.95, "surge_peak_m": 0.65, "rain_tide_peak_offset_h": -6},
+    "rain_with_tide": {"label": "雨峰与高潮重合", "rainfall_multiplier": 1.3, "add_peak_mm": 22,
+                       "tide_amplitude_m": 0.95, "surge_peak_m": 0.65, "rain_tide_peak_offset_h": 0},
+    "rain_6h_after_tide": {"label": "雨峰滞后高潮6小时", "rainfall_multiplier": 1.3, "add_peak_mm": 22,
+                           "tide_amplitude_m": 0.95, "surge_peak_m": 0.65, "rain_tide_peak_offset_h": 6},
     "pump_failure": {"label": "泵站降效 65%", "rainfall_multiplier": 1.15, "add_peak_mm": 12,
-                     "peak_offset_h": 18, "drainage_factor": 0.65, "tide_raise": 0.1},
+                     "peak_offset_h": 18, "drainage_factor": 0.65, "surge_peak_m": 0.1},
     "extreme": {"label": "极端特大暴雨", "rainfall_multiplier": 2.2, "add_peak_mm": 70,
-                "peak_offset_h": 16, "drainage_factor": 0.85, "tide_raise": 0.2},
+                "peak_offset_h": 16, "drainage_factor": 0.85, "surge_peak_m": 0.2},
 }

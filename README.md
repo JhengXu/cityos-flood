@@ -20,6 +20,7 @@
 | 模型对比 | 在同一数据切分下比较 LSTM 与 Transformer |
 | 数据实验室 | 查看当前降雨、手动输入降雨序列、按数据契约上传 CSV 并触发重训 |
 | 情景推演 | 台风+大潮、泵站降效、极端暴雨及自定义 What-if 参数 |
+| 海洋边界 | 72小时天文潮/风暴增水代理、潮位—排水非线性耦合、雨潮±6小时错位实验、基准面与质量护栏 |
 | 决策支持 | 道路/设施可达性、封路与抽排反事实对比、观测数据同化 |
 | 执行闭环 | 泵站调度建议、分级处置、预警日志与可选 Webhook |
 
@@ -44,7 +45,7 @@
 
 - **前端**：React 18 + Vite + Leaflet（暗色地图，分区风险热力）+ Recharts（降雨图 / 推演轨迹）
 - **后端**：Python FastAPI + NumPy（预测、物理代理、空间关系、同化和决策接口）
-- **数据**：Open-Meteo 多点实时天气 + Open-Elevation 真实 DEM + 真实历史内涝事件库
+- **数据**：Open-Meteo 多点实时天气 + Open-Elevation 真实 DEM + 历史内涝事件库；深圳实测潮位仍待取得，当前海洋曲线明确标为物理代理
 - **在线模型**：混合物理模型 + NumPy LSTM 时序推演（Adam/BPTT，权重缓存）
 - **研究管线**：PyTorch LSTM/Transformer、固定切分训练、历史回放与概率校准
 
@@ -52,7 +53,8 @@
 cityos-flood/
 ├── PROJECT_MASTER.md       # 项目总纲、能力边界与路线图
 ├── docs/
-│   └── model_data_contract.md # 真实监督数据字段与切分契约
+│   ├── model_data_contract.md # 真实监督数据字段与切分契约
+│   └── ocean_data_contract.md # 潮位时区、基准面、质量控制、聚合与分解契约
 ├── backend/app/
 │   ├── shenzhen.py   # 10区 + 30街道采样点；特征接入真实高程/历史指数
 │   ├── geo.py        # Open-Elevation 真实 DEM（批量+文件缓存）
@@ -66,6 +68,8 @@ cityos-flood/
 │   ├── assimilation.py  # 观测水深残差同化
 │   ├── userdata.py   # 当前数据、手动预测与 CSV 上传
 │   ├── simulate.py   # What-if 情景沙盘引擎 + 预设
+│   ├── ocean.py      # 天文潮、增水、海洋特征与排水边界耦合
+│   ├── ocean_data.py # 实测潮位读取、质量控制、小时聚合与调和分解
 │   ├── dispatch.py   # 泵站调度 + 处置建议 + 预警推送（日志/Webhook）
 │   └── main.py       # FastAPI 接口
 ├── frontend/src/     # React 主界面与可视化组件
@@ -124,6 +128,7 @@ python -m ml.main all
 - **观测/公开来源**：Open-Meteo 降雨预报、Open-Elevation 高程，以及根据公开资料整理的历史内涝事件事实。外部服务不可用时会使用回退样例。
 - **真实/真实推导**：低洼比例/临海度(真实 DEM)、下垫面可透水率(真实 WorldCover)、排水防涝设计标准(真实 OSM 道路网+WorldCover+DEM 派生)；泵站排涝能力为代表性估算，待水务局台账替换。
 - **训练模式**：存在符合 `docs/model_data_contract.md` 的逐时积水数据时使用真实监督标签；缺失时使用锚定历史事件事实的演示序列。演示模式结果不能等同于生产环境实测能力。
+- **潮位模式**：原始潮位必须符合 `docs/ocean_data_contract.md`；系统拒绝无时区时间戳和未统一基准面的跨站合并。当前尚未取得深圳历史逐时实测序列，面板显示的是预测/模拟代理。
 - **替换缝**：可将权威排水管网、DEM、下垫面、积水点和泵站台账接入 `backend/data/`；模型数据契约保持不变。
 - **部署边界**：本项目是研究与产品演示原型，不能直接替代气象、水务或应急部门的正式预警系统。
 

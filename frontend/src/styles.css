@@ -513,6 +513,23 @@ button {
   color: var(--ink);
 }
 
+/* 海洋边界条件 */
+.ocean-card { margin-bottom: 14px; }
+.prov-pill { font-size: 11px; color: #f6c58d; border: 1px solid rgba(224,138,30,.45); background: rgba(224,138,30,.10); border-radius: 999px; padding: 3px 9px; }
+.ocean-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 14px; }
+.ocean-kpis .ov-card { padding: 13px; }
+.ocean-kpis .ov-v { font-size: 20px; color: #9fc0ff; }
+.ocean-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; }
+.ocean-chart, .ocean-explain { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 12px; }
+.ocean-flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0 15px; font-size: 12px; }
+.ocean-flow span { background: rgba(20,91,255,.12); color: #b9d0ff; border-radius: 6px; padding: 5px 7px; }
+.ocean-flow i { color: #e08a1e; font-style: normal; }
+.prov-line { display: grid; grid-template-columns: 62px 1fr; gap: 8px; font-size: 11px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.prov-line b { color: #cdd0d6; }
+.prov-line span { color: #8C9098; overflow-wrap: anywhere; }
+.ocean-warning { margin-top: 10px; color: #f6c58d; background: rgba(224,138,30,.08); border-radius: 8px; padding: 8px 10px; font-size: 11px; line-height: 1.5; }
+@media (max-width: 900px) { .ocean-grid { grid-template-columns: 1fr; } .ocean-kpis { grid-template-columns: repeat(2, 1fr); } }
+
 /* Dispatch */
 .dispatch .empty {
   color: var(--muted);

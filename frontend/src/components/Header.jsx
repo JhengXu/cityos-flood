@@ -1,6 +1,8 @@
 import { fmtTime, levelColor, LEVEL_LABELS } from '../api'
 
 export default function Header({ data, onRefresh, loading }) {
+  const isLiveWeather = String(data?.data_source || '').startsWith('open-meteo')
+
   return (
     <header className="hdr">
       <div className="brand">
@@ -12,8 +14,8 @@ export default function Header({ data, onRefresh, loading }) {
       </div>
       <div className="hdr-right">
         {data && (
-          <span className={`src ${data.data_source === 'open-meteo' ? 'live' : 'sample'}`}>
-            {data.data_source === 'open-meteo' ? '● 实时天气' : '○ 样例数据'}
+          <span className={`src ${isLiveWeather ? 'live' : 'sample'}`}>
+            {isLiveWeather ? '● 实时天气' : '○ 样例数据'}
           </span>
         )}
         <button onClick={onRefresh} disabled={loading}>

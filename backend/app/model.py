@@ -146,9 +146,11 @@ def compute_cum_seq(rainfall_seq, window=24):
 def build_seq_features(rainfall_seq, cum_seq, V, C, tide_seq):
     T = len(rainfall_seq)
     X = np.zeros((T, 5))
+    cseq = np.asarray(C if np.ndim(C) else [C] * T, dtype=float)
     for t in range(T):
-        excess = max(0.0, rainfall_seq[t] - C)
-        X[t] = [excess / 60.0, cum_seq[t] / 200.0, V, C / 40.0, tide_seq[t]]
+        drainage = float(cseq[t])
+        excess = max(0.0, rainfall_seq[t] - drainage)
+        X[t] = [excess / 60.0, cum_seq[t] / 200.0, V, drainage / 40.0, tide_seq[t]]
     return X
 
 

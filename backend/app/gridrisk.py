@@ -28,6 +28,11 @@ def _load_feature_pts():
     built = gisreal._read_rows(os.path.join(gisreal.BASE, "shenzhen_builtup_density.csv"))
     dem_pts = [(float(r["lat"]), float(r["lon"]), float(r["elevation_m"])) for r in dem]
     built_pts = [(float(r["lat"]), float(r["lon"]), float(r["builtup_pct"])) for r in built]
+    # 数据文件未下载时保持页面可用，并明确退回区级估计值，避免 None 触发 500。
+    if not dem_pts:
+        dem_pts = [(d["center"][0], d["center"][1], d["elevation_mean"]) for d in shenzhen.DISTRICTS]
+    if not built_pts:
+        built_pts = [(d["center"][0], d["center"][1], d.get("impervious", 0.5) * 100) for d in shenzhen.DISTRICTS]
     return dem_pts, built_pts
 
 

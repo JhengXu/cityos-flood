@@ -1,6 +1,9 @@
 import { useState } from 'react'
 
 const PRESETS = [
+  { key: 'rain_6h_before_tide', label: '雨峰提前6h' },
+  { key: 'rain_with_tide', label: '雨潮同峰' },
+  { key: 'rain_6h_after_tide', label: '雨峰滞后6h' },
   { key: 'typhoon_tide', label: '台风 + 天文大潮' },
   { key: 'pump_failure', label: '泵站降效 65%' },
   { key: 'extreme', label: '极端特大暴雨' },
@@ -12,7 +15,11 @@ export default function ScenarioPanel({ onRun, loading }) {
     rainfall_multiplier: 1.3,
     add_peak_mm: 22,
     drainage_factor: 0.85,
-    tide_raise: 0.35,
+    tide_amplitude_m: 0.85,
+    surge_peak_m: 0.5,
+    surge_peak_offset_h: 20,
+    surge_duration_h: 12,
+    rain_tide_peak_offset_h: 0,
   })
   const set = (k, v) => setCustom((c) => ({ ...c, [k]: v }))
 
@@ -42,7 +49,11 @@ export default function ScenarioPanel({ onRun, loading }) {
           ['rainfall_multiplier', '降雨放大 ×', 0.5, 3, 0.1, (v) => `×${v}`],
           ['add_peak_mm', '额外暴雨峰值 (mm/h)', 0, 100, 1, (v) => v],
           ['drainage_factor', '泵站/排水效能', 0.5, 1, 0.05, (v) => `${Math.round(v * 100)}%`],
-          ['tide_raise', '潮位抬升', 0, 0.6, 0.05, (v) => v.toFixed(2)],
+          ['tide_amplitude_m', '天文潮振幅 (m)', 0.3, 1.4, 0.05, (v) => v.toFixed(2)],
+          ['surge_peak_m', '风暴增水峰值 (m)', 0, 1.8, 0.05, (v) => v.toFixed(2)],
+          ['surge_peak_offset_h', '增水峰值时刻 (+h)', 0, 71, 1, (v) => v],
+          ['surge_duration_h', '增水过程时长 (h)', 3, 36, 1, (v) => v],
+          ['rain_tide_peak_offset_h', '雨峰相对高潮 (h)', -12, 12, 1, (v) => `${v > 0 ? '+' : ''}${v}`],
         ].map(([k, label, min, max, step, fmt]) => (
           <label key={k} className="slider">
             <span>{label}</span>
