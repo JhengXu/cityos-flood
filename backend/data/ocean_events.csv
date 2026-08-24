@@ -1,0 +1,8 @@
+event_id,name,start_bjt,end_bjt,event_type,label_status,negative_sample,required_sources
+2017-hato,2017台风天鸽,2017-08-22T00:00:00+08:00,2017-08-24T23:00:00+08:00,typhoon_compound,pending,false,"tide,rain,track,wind,pressure,flood,road,response"
+2018-mangkhut,2018台风山竹,2018-09-15T00:00:00+08:00,2018-09-17T23:00:00+08:00,typhoon_compound,pending,false,"tide,rain,track,wind,pressure,flood,road,response"
+2023-0907,2023年9·7极端暴雨,2023-09-07T00:00:00+08:00,2023-09-09T23:00:00+08:00,rain_compound,pending,false,"tide,rain,wind,pressure,flood,road,response"
+2023-saola,2023台风苏拉,2023-09-01T00:00:00+08:00,2023-09-03T23:00:00+08:00,typhoon_compound,pending,false,"tide,rain,track,wind,pressure,flood,road,response"
+negative-high-tide,高潮位无明显内涝,TBD,TBD,negative,pending,true,"tide,rain,flood"
+negative-heavy-rain-low-tide,强降雨叠加低潮,TBD,TBD,negative,pending,true,"tide,rain,flood"
+negative-surge-low-rain,强增水弱降雨,TBD,TBD,negative,pending,true,"tide,rain,wind,pressure,flood"

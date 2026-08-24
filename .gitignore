@@ -1,0 +1,45 @@
+# --- Node ---
+node_modules/
+frontend/dist/
+npm-debug.log*
+
+# --- Python ---
+backend/.venv/
+__pycache__/
+*.pyc
+
+# --- OS ---
+.DS_Store
+
+# --- 敏感凭据（勿提交）---
+.env
+*.env
+!.env.example
+backend/data/user/
+backend/data/.cache_*/
+ml/outputs/*.pt
+ml/outputs/*.pkl
+shenzhen-flood/data/raw/sz_*
+
+# --- 虚拟环境 / 缓存 ---
+.venv-ml
+.venv
+**/.venv*/
+ml/outputs/
+**/.cache_*/
+
+# --- 敏感凭据（禁止上传）---
+docs/access_credentials.md
+
+# --- 原始大数据（体积巨大，不入 git）---
+data/raw/
+data/rainfall/raw/
+data/osm/shenzhen_roads_raw.json
+
+# --- 临时工作目录（不入 git）---
+.tmp/
+
+# --- 临时演示产物（PPT/中间文件，不入 git）---
+outputs/*.pptx
+outputs/*.ndjson
+outputs/自主优化WAM-*/
