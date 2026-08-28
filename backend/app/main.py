@@ -12,15 +12,19 @@ from starlette.datastructures import UploadFile
 from . import (
     accessibility,
     assimilation,
+    coastal,
     demo,
     dispatch,
     events,
     forecasting,
+    geohazard,
     ocean,
     realdatav,
+    river,
     shenzhen,
     simulate,
     spatial,
+    typhoon,
     userdata,
     wam,
     weather,
@@ -136,6 +140,52 @@ class ManualForecastRequest(BaseModel):
     tide_raise: float = Field(0.0, ge=0.0, le=5.0)
 
 
+class CoastalForecastRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    times: list[str] = Field(min_length=1, max_length=240)
+    rainfall_by_district: dict[str, list[RainfallValue]]
+    observed_level_m: list[float] = Field(min_length=1, max_length=240)
+    predicted_tide_m: Optional[list[float]] = None
+    surge_residual_m: Optional[list[float]] = None
+    station_id: str = Field(min_length=1)
+    datum: str = Field(min_length=1)
+    source: str = Field(min_length=1)
+    available_at: str = Field(min_length=1)
+
+
+class RiverForecastRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    basin_rainfall_mm_h: dict[str, list[RainfallValue]]
+    upstream_inflow_m3_s: float = Field(0.0, ge=0.0, le=100000.0)
+
+
+class GeoHazardRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    rainfall_mm_h: list[RainfallValue] = Field(min_length=1, max_length=240)
+    slope_deg: float = Field(ge=0.0, le=90.0)
+    soil_saturation: float = Field(0.35, ge=0.0, le=1.0)
+    geology_vulnerability: float = Field(0.5, ge=0.0, le=1.0)
+    impervious_ratio: float = Field(0.3, ge=0.0, le=1.0)
+    vegetation_fraction: float = Field(0.5, ge=0.0, le=1.0)
+
+
+class TyphoonTrackPointRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    max_wind_m_s: float = Field(ge=0.0, le=120.0)
+    central_pressure_hpa: float = Field(ge=850.0, le=1050.0)
+    rain_rate_mm_h: float = Field(ge=0.0, le=500.0)
+
+
+class TyphoonMultiHazardRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    times: list[str] = Field(min_length=1, max_length=168)
+    track: list[TyphoonTrackPointRequest] = Field(min_length=1, max_length=168)
+    upstream_inflow_m3_s: float = Field(0.0, ge=0.0, le=100000.0)
+    mean_sea_level_m: float = Field(0.0, ge=-3.0, le=5.0)
+
+
 def _scenario_from_request(config: ScenarioRequest):
     explicit_overrides = sorted(
         _SCENARIO_OVERRIDE_FIELDS.intersection(config.model_fields_set)
@@ -228,9 +278,9 @@ def _raise_simulation_http_error(exc: ValueError):
     raise HTTPException(status_code=status, detail=message) from exc
 
 app = FastAPI(
-    title="CITY OS · 深圳内涝预测 v3",
-    description="守恒图状态空间 + 参数集合 + 局地 EnSRF 的深圳内涝预测与情景沙盘",
-    version="3.2.0",
+    title="CITY OS · 深圳多灾种世界模型 v4",
+    description="城市内涝、海岸洪涝、河流山洪、地质灾害和台风统一强迫的可审计世界模型",
+    version="4.0.0",
 )
 
 app.add_middleware(
@@ -289,10 +339,73 @@ def health():
     return {
         "status": "ok",
         "service": "cityos-flood",
-        "version": "3.2.0",
+        "version": "4.0.0-multihazard",
         "model_version": forecasting.MODEL_VERSION,
         "time": time.time(),
     }
+
+
+def _json_arrays(value):
+    """Recursively convert NumPy results into API-safe JSON values."""
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    if isinstance(value, dict):
+        return {key: _json_arrays(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_arrays(item) for item in value]
+    return value
+
+
+@app.post("/api/hazards/coastal")
+def forecast_coastal(payload: CoastalForecastRequest):
+    """Observed/forecast sea level plus rainfall, with marine volume accounting."""
+    try:
+        boundary = coastal.boundary_from_levels(
+            payload.times, payload.observed_level_m,
+            predicted_tide_m=payload.predicted_tide_m,
+            surge_residual_m=payload.surge_residual_m,
+            station_id=payload.station_id, datum=payload.datum,
+            source=payload.source, available_at=payload.available_at,
+        )
+        return _json_arrays(coastal.DEFAULT_MODEL.simulate(payload.rainfall_by_district, boundary))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/hazards/river")
+def forecast_river(payload: RiverForecastRequest):
+    """Basin rainfall and upstream-boundary river/floodplain forecast."""
+    try:
+        return _json_arrays(river.DEFAULT_MODEL.simulate(
+            payload.basin_rainfall_mm_h, payload.upstream_inflow_m3_s
+        ))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/hazards/geology")
+def forecast_geology(payload: GeoHazardRequest):
+    """Dynamic runoff coefficient, soil saturation and slope-failure belief."""
+    try:
+        return _json_arrays(geohazard.DEFAULT_MODEL.simulate(**payload.model_dump()))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/hazards/typhoon")
+def forecast_typhoon(payload: TyphoonMultiHazardRequest):
+    """One typhoon track drives rainfall, wind, tide, river and terrain hazards."""
+    if len(payload.times) != len(payload.track):
+        raise HTTPException(status_code=422, detail="times and track lengths must match")
+    try:
+        result = typhoon.simulate(
+            payload.times, [point.model_dump() for point in payload.track],
+            upstream_inflow_m3_s=payload.upstream_inflow_m3_s,
+            mean_sea_level_m=payload.mean_sea_level_m,
+        )
+        return _json_arrays(result)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.get("/api/districts")
