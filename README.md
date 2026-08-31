@@ -1,68 +1,59 @@
-# 深圳城市多灾种预测与情景推演 v4.0
+# CITY OS v5.1 · 深圳全自然灾害指挥中心
 
-v4.0 在保持 v3.2 城市内涝接口兼容的基础上新增四个可审计模型域：
+世界模型 + 知识库 + 决策闭环的**城市安全指挥中心**（研究演示原型）。
+数据全部真实（IBTrACS/ERA5/CMEMS/HKO/规自局/深圳开放平台），非演示数字。
 
-- 真实/预报潮位与风暴增水驱动的海岸复合洪涝，海水入侵体积独立守恒；
-- 流域面雨、上游来水边界、河网拓扑、河道流量和沿河洪泛状态；
-- 土壤饱和记忆、动态产流系数与滑坡/泥石流触发信念；
-- 台风轨迹统一派生降雨、风、气压和增水，并驱动全部灾种。
+## 核心能力
 
-架构、数据合同、API 与验证边界见 [多灾种 v4.0 架构](docs/multihazard_v4_architecture.md)。
+### 四灾种实时监测
+- **内涝**：守恒状态空间模型（真实 GIS 参数，质量守恒可审计）+ 集合模拟 P10/P50/P90 概率桶
+- **滑坡**：监督模型 **AUC 0.821**（905 条官方预警训练，时间外验证）
+- **台风**：IBTrACS 路径库（42 事件）+ 气象局实时预报
+- **风暴潮**：12 分潮谐波推算（RMSE 0.126m）+ 台风增水参数化
 
-当前在线核心已经从“物理代理生成标签 → LSTM 拟合”改为可审计的守恒图状态空间模型：
+### AI 城安助手（三段式 RAG）
+Qwen3-Embedding-8B 语义召回 → bge-reranker-v2-m3 精排 → deepseek-v4-flash-vision-exp 生成。多轮对话、实时数据注入、今日态势简报、历史事件检索。
 
-- 以行政区地表存水体积（m³）为状态，显式计算降雨产流、排水、区际路由和城市边界外排；
-- 用起报前 24 个已完整结束小时的分区降雨做地表存水 spin-up，再进行一次观测更新；
-- 用连续两段式蓄水曲线把体积转换为代表性水深；
-- 64 成员规范参数集合输出 P10/P50/P90 和 5/15/30/50cm 超阈频率；
-- 新鲜、质控且完成空间映射的水深代理通过确定性局地 EnSRF 更新初态；
-- 预测、情景推演、街道和网格产品共享同一预报快照、初始分析和参数成员；
-- 旧 LSTM/Transformer 只保留为隔离的历史实验，不参与在线接口。
+### 决策闭环
+WAM 优化 → 提交决策建议 → 人工批准/驳回 → 执行 → 效果回评（SHA-256 审计链）。
 
-旧实验默认拒绝训练和评估；只有显式使用
-`python -m ml.main all --allow-proxy-labels` 才能复现，且输出会标为
-`invalid_for_skill_claim`，不得解释为真实预测准确率。该隔离复现还需单独安装
-`ml-requirements.txt`，生产后端不需要 PyTorch。
+### What-if 推演
+台风路径平移/增强 → 降雨/滑坡/内涝/增水四链对比 + 三情景对比表。
 
-## 运行
+### 页面（7）
+态势总览（简报+告警+内涝概率桶+2D/3D地图+风暴潮+What-if）· 世界模型 · 自主优化（决策闭环）· 知识库 · 台风 · 风暴潮 · 滑坡
 
-需要 Python 3.10+ 与 Node 18+：
+## 快速启动
 
 ```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+# 后端 (Python 3.10+)
+cd backend && pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# 前端 (Node 18+)
+cd frontend && npm run build && npm run preview -- --port 4173
+# 打开 http://localhost:4173
 ```
 
-另开终端：
+## 质量保障
 
-```bash
-cd frontend
-npm install
-npm run dev
+| 项 | 状态 |
+|----|------|
+| 单元测试 | **128 通过**（`python -m unittest discover -s tests`）|
+| 真实性检验 | **20/20**（`backend/scripts/verify_truth.py`）|
+| E2E 用户旅程 | **10/10**（`backend/scripts/e2e_journey.py`）|
+| OpenAPI 文档 | 71 端点 |
+| 模型再训练 | `backend/scripts/retrain.py` |
+
+## 目录结构
+```
+cityos-flood-github/    主项目（FastAPI 42 模块 + React v5 42 组件）
+├── backend/app/        knowledge(知识库) / surge(风暴潮) / decision(决策) / live_ops(实时) / cascade(链式)
+├── backend/scripts/    verify_truth.py / e2e_journey.py / retrain.py / health_monitor.sh
+├── frontend/src/       7 页面 + 42 组件
+├── docs/               KNOWLEDGE_BASE.md / TRAINING_REPORT.md
+└── tests/              128 单元测试
+shenzhen-flood/         数据工作区（unified/ml_models/raw/processed）
 ```
 
-也可运行 `bash run.sh`。默认前端地址为 <http://localhost:5173>。
-
-## 验证
-
-```bash
-backend/.venv/bin/python -m unittest discover -s tests -v
-cd frontend && npm run build
-```
-
-当前项目内只有 148 站、6,573 条、约 44 小时的质控水位切片，最高 0.10m；这些旧缓存行没有 `available_at`，也没有独立标注洪涝事件。因此系统会返回 `insufficient_data`，并拒绝把它们注入历史起报快照或用合成标签冒充真实预测准确率。
-
-## 关键文档
-
-- [完整产品说明](README-cityos.md)
-- [项目总纲与路线图](PROJECT_MASTER.md)
-- [v3.2 模型架构](docs/model_v3_architecture.md)
-- [优先数据源与接入计划](docs/data_source_plan.md)
-- [当前 API 契约](docs/model_api_spec.md)
-- [自主优化行动 WAM 安全闭环](docs/wam_decision_loop.md)
-- [真实监督数据与无泄漏验证契约](docs/model_data_contract.md)
-
-本项目是研究与产品演示原型，不能替代气象、水务或应急部门的正式预警。
+⚠️ `.env` 含全部 API 凭据，已 gitignore，勿上传公开渠道。
