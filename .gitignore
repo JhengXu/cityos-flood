@@ -43,3 +43,4 @@ data/osm/shenzhen_roads_raw.json
 outputs/*.pptx
 outputs/*.ndjson
 outputs/自主优化WAM-*/
+data/_test_decisions.json
