@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { fetchJSON } from '../api'
+import FloodProfilePanel from './FloodProfilePanel.jsx'
 
 /**
  * KnowledgeBasePanel — 沉淀知识库（参照 cityos-command-workbench 设计）
@@ -677,6 +678,9 @@ function CityBaseTab() {
           <p className="kb-base-sub">易涝暴露前三：福田 99 万、龙岗 99 万、罗湖 64 万。</p>
         </div>
       </div>
+
+      {/* 分区内涝风险画像 */}
+      <FloodProfilePanel />
 
       {/* 隐患点分布 */}
       <div className="card kb-base-card">

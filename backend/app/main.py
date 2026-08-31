@@ -1439,6 +1439,13 @@ def api_knowledge_events():
     return knowledge.historical_events()
 
 
+@app.get("/api/knowledge/flood-profile")
+def api_knowledge_flood_profile():
+    """分区内涝风险画像（历史易涝密度 × 实时预测）。"""
+    from . import knowledge
+    return knowledge.district_flood_profile()
+
+
 @app.get("/api/knowledge/suggestions")
 def api_knowledge_suggestions():
     """预置追问建议（前端快捷按钮）。"""

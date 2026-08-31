@@ -685,6 +685,52 @@ CITY_BASE = {
 
 
 # ---------------------------------------------------------------------------
+# 分区内涝风险画像（历史易涝点密度 + 实时预测辅助）
+# ---------------------------------------------------------------------------
+DISTRICT_FLOOD_RISK_PROFILE = {
+    # 历史易涝点密度（2019 官方名单，每区数量）
+    "futian": {"name": "福田区", "flood_points_2019": 32, "tag": "CBD 高密度", "exposure": "高"},
+    "luohu": {"name": "罗湖区", "flood_points_2019": 29, "tag": "老城区", "exposure": "高"},
+    "longgang": {"name": "龙岗区", "flood_points_2019": 57, "tag": "工业+新城", "exposure": "中"},
+    "pingshan": {"name": "坪山区", "flood_points_2019": 29, "tag": "山地+新城", "exposure": "中"},
+    "nanshan": {"name": "南山区", "flood_points_2019": 19, "tag": "高新+滨海", "exposure": "中"},
+    "baoan": {"name": "宝安区", "flood_points_2019": 12, "tag": "机场+制造", "exposure": "中"},
+    "yantian": {"name": "盐田区", "flood_points_2019": 9, "tag": "滨海港口", "exposure": "中"},
+    "longhua": {"name": "龙华区", "flood_points_2019": 5, "tag": "居住新城", "exposure": "低"},
+    "guangming": {"name": "光明区", "flood_points_2019": 11, "tag": "科学城", "exposure": "中"},
+    "dapeng": {"name": "大鹏新区", "flood_points_2019": 3, "tag": "生态旅游", "exposure": "低"},
+}
+
+
+def district_flood_profile():
+    """分区内涝风险画像（历史易涝点 + 实时 P50 预测）。"""
+    live = _get_live_snapshot()
+    fq = (live or {}).get("flood_quantiles") or {}
+    out = []
+    for did, prof in DISTRICT_FLOOD_RISK_PROFILE.items():
+        q = fq.get(did, {})
+        # 综合风险：历史易涝密度 + 预测峰值
+        hist_score = min(prof["flood_points_2019"] / 57.0, 1.0)  # 龙岗最大
+        p50 = q.get("p50_peak_mm", 0.0)
+        pred_score = min(p50 / 50.0, 1.0)
+        combined = round(hist_score * 0.6 + pred_score * 0.4, 3)
+        level = "high" if combined >= 0.6 else ("mid" if combined >= 0.3 else "low")
+        out.append({
+            "district_id": did, "name": prof["name"], "tag": prof["tag"],
+            "flood_points_2019": prof["flood_points_2019"],
+            "exposure": prof["exposure"],
+            "p50_peak_mm": p50,
+            "risk_score": combined,
+            "risk_level": level,
+            "risk_level_label": {"high": "高风险", "mid": "中风险", "low": "低风险"}[level],
+        })
+    out.sort(key=lambda x: -x["risk_score"])
+    return {"districts": out,
+            "source": "历史=官方2019易涝名单 / 预测=集合模拟P50 / 权重=0.6+0.4",
+            "note": "综合风险 = 0.6×历史易涝密度 + 0.4×实时预测P50峰值（归一化）"}
+
+
+# ---------------------------------------------------------------------------
 # 模型档案（三个监督模型的真实指标 + 诚实局限）
 # ---------------------------------------------------------------------------
 MODEL_ARCHIVE = [
