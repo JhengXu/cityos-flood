@@ -37,7 +37,8 @@ export default function OverviewPage({ predictData = null }) {
   async function load(force = false) {
     setRefreshing(true)
     try {
-      const d = await fetchJSON(force ? '/api/live/refresh' : '/api/live')
+      // live 是首屏关键数据，用自带重试+更长超时（后端可能正在预热外部 API）
+      const d = await fetchJSON(force ? '/api/live/refresh' : '/api/live', { retries: 5, backoff: 500 })
       setLive(d)
       setUpdatedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false }))
       setErr(null)
@@ -117,13 +118,11 @@ export default function OverviewPage({ predictData = null }) {
       </div>
 
       {/* ===== 内涝概率桶 ===== */}
-      <FloodRiskPanel />
+      {/* ===== 实时告警流（最优先） ===== */}
+      <AlertStream alerts={live.alerts || []} generatedAt={live.generated_at || ''} />
 
       {/* ===== 今日态势简报 ===== */}
       <DailyBriefing />
-
-      {/* ===== 实时告警流 ===== */}
-      <AlertStream alerts={live.alerts || []} generatedAt={live.generated_at || ''} />
 
       {/* ===== 四灾种实时卡 ===== */}
       <div className="ov-grid">
@@ -157,6 +156,9 @@ export default function OverviewPage({ predictData = null }) {
           )
         })}
       </div>
+
+      {/* ===== 内涝概率桶 ===== */}
+      <FloodRiskPanel />
 
       {/* ===== 主区：3D + 三联曲线 ===== */}
       <div className="ov-main">
