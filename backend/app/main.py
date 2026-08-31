@@ -2,10 +2,12 @@
 """CITY OS · 深圳内涝预测 v3 — FastAPI backend."""
 import math
 import time
+from datetime import datetime
 from typing import Annotated, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.datastructures import UploadFile
 
@@ -18,6 +20,7 @@ from . import (
     events,
     forecasting,
     geohazard,
+    multihazard,
     ocean,
     realdatav,
     river,
@@ -282,6 +285,7 @@ app = FastAPI(
     description="城市内涝、海岸洪涝、河流山洪、地质灾害和台风统一强迫的可审计世界模型",
     version="4.0.0",
 )
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 app.add_middleware(
     CORSMiddleware,
@@ -1016,3 +1020,434 @@ def api_risk_grid_image(
         "Cache-Control": "private, max-age=600",
         "X-Content-Type-Options": "nosniff",
     })
+
+
+# ============ 全自然灾害（v4 多灾种展示 + 3D 场景）============
+
+@app.get("/api/hazards/summary")
+def api_hazards_summary():
+    """四大灾种真实数据总览：台风/风暴潮/内涝/滑坡。"""
+    return {
+        "typhoon": multihazard.typhoon_summary(),
+        "surge": multihazard.surge_summary(),
+        "landslide": multihazard.landslide_summary(),
+        "flood": {
+            "name": "内涝",
+            "note": "沿用守恒状态空间集合模型（forecasting/state_model）",
+            "provenance": "Open-Meteo 降雨预报 + DEM/WorldCover/OSM 派生城市特征",
+        },
+        "provenance": "四大灾种真实数据来自 shenzhen-flood/data/unified 统一数据层",
+    }
+
+
+@app.get("/api/hazards/typhoon/track")
+def api_typhoon_track(name: str = "", sid: str = ""):
+    """单个台风路径点序列（供地图/3D 绘制）。"""
+    if name:
+        pts = multihazard.typhoon_track_points(name=name)
+    elif sid:
+        pts = multihazard.typhoon_track_points(sid=sid)
+    else:
+        pts = []
+    return {"points": pts, "n": len(pts), "query": {"name": name, "sid": sid}}
+
+
+@app.get("/api/scene3d")
+def api_scene3d(
+    dem_step: int = Query(8, ge=2, le=32),
+    building_min_height: float = Query(40.0, ge=0.0, le=200.0),
+    building_limit: int = Query(5000, ge=100, le=20000),
+):
+    """3D 场景数据：DEM 地形 + 建筑高度 + 灾种点叠加。"""
+    return multihazard.scene3d(
+        dem_step=dem_step,
+        building_min_height=building_min_height,
+        building_limit=building_limit,
+    )
+
+
+# ============ 已训练监督模型（真实标签 ML）============
+
+@app.get("/api/ml/landslide-sensitivity")
+def api_ml_landslide_sensitivity(
+    rain_max_mm: float = Query(200.0, ge=20.0, le=500.0),
+    sm1: float = Query(0.35, ge=0.1, le=0.6),
+    month: int = Query(9, ge=1, le=12),
+):
+    """滑坡概率对降雨量的敏感性曲线（模型可解释性）。"""
+    from . import ml_models
+    r = ml_models.landslide_sensitivity(rain_max_mm=rain_max_mm, sm1=sm1, month=month)
+    if r is None:
+        raise HTTPException(status_code=503, detail="模型未就绪")
+    return r
+
+
+@app.get("/api/ml/metrics")
+def api_ml_metrics():
+    """全部本地训练模型的指标（真实标签训练）。"""
+    from . import ml_models
+    return ml_models.all_metrics()
+
+
+@app.get("/api/ml/flood-spatial")
+def api_ml_flood_spatial(lat: float, lon: float):
+    """单点内涝空间风险（206 真实易涝点训练的模型）。"""
+    from . import ml_models
+    r = ml_models.predict_flood_spatial(lat, lon)
+    if r is None:
+        raise HTTPException(status_code=503, detail="模型未就绪")
+    return r
+
+
+@app.get("/api/ml/flood-grid")
+def api_ml_flood_grid(n: int = Query(60, ge=10, le=300)):
+    """全市网格内涝风险采样（模型热力）。"""
+    from . import ml_models
+    return {"points": ml_models.predict_flood_grid(n)}
+
+
+@app.get("/api/ml/wave")
+def api_ml_wave(
+    tc_lat: float, tc_lon: float,
+    wind_kt: float = 80.0, pres_hpa: float = 965.0,
+    hours: float = 0.0, pt_lat: float = 22.2, pt_lon: float = 114.6,
+):
+    """台风状态 → 近岸波高预测（CMEMS 真实波高标签训练）。"""
+    from . import ml_models
+    r = ml_models.predict_wave(tc_lat, tc_lon, wind_kt, pres_hpa, hours, pt_lat, pt_lon)
+    if r is None:
+        raise HTTPException(status_code=503, detail="模型未就绪")
+    return r
+
+
+@app.get("/api/ml/landslide-warning")
+def api_ml_landslide_warning(
+    rain_24h: float, rain_72h: float = None,
+    rain_168h: float = None, rain_max24h: float = None,
+    sm1: float = 0.3, sm2: float = 0.32, sm3: float = 0.34, month: int = 7,
+):
+    """气象状态 → 地灾预警发布概率（905 条官方预警训练）。"""
+    from . import ml_models
+    rain_72h = rain_72h if rain_72h is not None else rain_24h
+    rain_168h = rain_168h if rain_168h is not None else rain_24h
+    rain_max24h = rain_max24h if rain_max24h is not None else rain_24h / 6.0
+    r = ml_models.predict_landslide_warning(rain_24h, rain_72h, rain_168h, rain_max24h, sm1, sm2, sm3, month)
+    if r is None:
+        raise HTTPException(status_code=503, detail="滑坡预警模型未就绪（ERA5特征下载中）")
+    return r
+
+
+# ============ 多灾种链式预测：台风 → 降雨 → 滑坡 ============
+
+@app.get("/api/ml/cascade/typhoon")
+def api_ml_cascade_typhoon(name: str = "", sid: str = ""):
+    """真实台风 → 降雨场 → 分区滑坡预警概率（链式预测）。"""
+    from . import cascade
+    r = cascade.cascade_for_typhoon(name=name or None, sid=sid or None)
+    if r is None:
+        raise HTTPException(status_code=404, detail="台风路径数据不足")
+    return r
+
+
+@app.post("/api/ml/cascade/track")
+async def api_ml_cascade_track(request: Request):
+    """自定义台风路径 → 滑坡概率（供沙盘推演）。"""
+    from . import cascade
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=422, detail="invalid JSON")
+    track = body.get("track") or []
+    start = body.get("start_date") or "2026-09-01"
+    soil = body.get("soil") or [0.32, 0.34, 0.36]
+    if len(track) < 6:
+        raise HTTPException(status_code=422, detail="track 需要至少 6 个路径点")
+    r = cascade.predict_landslide_cascade(track, start, soil=tuple(soil))
+    return {"daily": r, "chain": cascade.predict_landslide_cascade.__doc__ or ""}
+
+
+# ============ 单页指挥中心：统一实时预测 ============
+
+@app.get("/api/live")
+def api_live():
+    """一次返回全部灾种实时状态与预测（Open-Meteo 实时 + 守恒模型 + ML）。"""
+    import json as _json
+    from fastapi import Response as _Resp
+    from . import live_ops
+    data = live_ops.build_live()
+    # 短缓存：60s 内代理/浏览器可复用（数据本身 10 分钟更新）
+    return _Resp(
+        content=_json.dumps(data, ensure_ascii=False, default=str),
+        media_type="application/json",
+        headers={"Cache-Control": "public, max-age=60"},
+    )
+
+
+@app.get("/api/live/refresh")
+def api_live_refresh():
+    """强制刷新实时数据（绕过缓存）。"""
+    from . import live_ops
+    return live_ops.refresh()
+
+
+# ============ WAM 决策工单闭环（建议→批准→执行→回评）============
+
+class DecisionSubmitRequest(BaseModel):
+    """WAM 建议提交（进入待人工决策队列）。"""
+    model_config = ConfigDict(extra="forbid")
+    plan_summary: str = Field(min_length=4, max_length=500)
+    control_actions: list = Field(default_factory=list, max_length=20)
+    expected_flood_peak_mm: Optional[float] = None
+    method: str = Field(default="robust_cem_constant_hold", max_length=64)
+
+
+@app.post("/api/decisions/submit")
+def api_decision_submit(payload: DecisionSubmitRequest):
+    """WAM 优化建议 → 待人工决策队列。"""
+    from . import decision
+    return decision.submit_suggestion(
+        optimizer_run={"method": payload.method,
+                       "expected_flood_peak_mm": payload.expected_flood_peak_mm},
+        plan_summary=payload.plan_summary,
+        control_actions=payload.control_actions,
+    )
+
+
+class DecisionActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    decision_id: str = Field(min_length=1)
+    by: str = Field(default="值班指挥", max_length=64)
+    note: str = Field(default="", max_length=500)
+
+
+@app.post("/api/decisions/approve")
+def api_decision_approve(payload: DecisionActionRequest):
+    """人工批准决策（进入执行队列）。"""
+    from . import decision
+    r = decision.approve(payload.decision_id, payload.by, payload.note)
+    if r is None:
+        raise HTTPException(status_code=404, detail="工单不存在或状态不允许")
+    return r
+
+
+@app.post("/api/decisions/reject")
+def api_decision_reject(payload: DecisionActionRequest):
+    """人工驳回（附理由）。"""
+    from . import decision
+    r = decision.reject(payload.decision_id, payload.by, payload.note)
+    if r is None:
+        raise HTTPException(status_code=404, detail="工单不存在或状态不允许")
+    return r
+
+
+class DecisionCompleteRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    decision_id: str = Field(min_length=1)
+    flood_peak_mm_actual: Optional[float] = None
+    control_applied: bool = True
+    note: str = Field(default="", max_length=500)
+
+
+@app.post("/api/decisions/complete")
+def api_decision_complete(payload: DecisionCompleteRequest):
+    """执行完成 → 效果回评（建议 vs 实际）。"""
+    from . import decision
+    r = decision.complete(payload.decision_id, {
+        "flood_peak_mm_actual": payload.flood_peak_mm_actual,
+        "control_applied": payload.control_applied,
+        "note": payload.note,
+    })
+    if r is None:
+        raise HTTPException(status_code=404, detail="工单不存在或状态不允许")
+    return r
+
+
+@app.get("/api/decisions")
+def api_decisions(status: str = ""):
+    """决策工单列表（含状态统计与审计链）。"""
+    from . import decision
+    return decision.list_decisions(status)
+
+
+# ============ 台风情景 What-if 推演 ============
+
+@app.get("/api/cascade/whatif")
+def api_cascade_whatif(
+    name: str = "",
+    dist_shift_km: float = Query(0.0, ge=-300.0, le=300.0),
+    wind_factor: float = Query(1.0, ge=0.5, le=2.0),
+):
+    """台风情景推演：路径平移/强度缩放 → 灾害链（降雨/滑坡/内涝）对比。"""
+    from . import cascade
+    r = cascade.whatif_typhoon(
+        name=name or None,
+        dist_shift_km=dist_shift_km,
+        wind_factor=wind_factor,
+    )
+    if r is None:
+        raise HTTPException(status_code=404, detail="台风路径数据不足")
+    return r
+
+
+# ============ 实时告警推送（SSE）============
+
+@app.get("/api/alerts/stream")
+async def alerts_stream():
+    """SSE 告警流：每 60s 推送当前告警快照（长连接，自动断线重连）。"""
+    import asyncio
+    import json as _json
+    from fastapi.responses import StreamingResponse
+    from . import live_ops
+
+    async def gen():
+        last_sig = None
+        for _ in range(1440):  # 最长 24h，客户端自动重连
+            try:
+                live = live_ops.build_live()
+                alerts = live.get("alerts", [])
+                sig = _json.dumps([a["id"] for a in alerts])
+                payload = {
+                    "type": "alerts" if sig != last_sig else "heartbeat",
+                    "alerts": alerts if sig != last_sig else [],
+                    "generated_at": live.get("generated_at"),
+                }
+                yield f"data: {_json.dumps(payload, ensure_ascii=False)}\n\n"
+                last_sig = sig
+            except Exception:
+                yield f"data: {_json.dumps({'type': 'heartbeat'})}\n\n"
+            await asyncio.sleep(60)
+
+    return StreamingResponse(gen(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ============ 风暴潮（天文潮谐波 + 台风增水参数化）============
+
+@app.get("/api/surge/live")
+def api_surge_live(hours: int = Query(48, ge=6, le=120)):
+    """实时风暴潮：两站天文潮推算 + 活跃台风增水叠加 + 预警水位分级。"""
+    from . import live_ops, surge
+    live = live_ops.build_live()
+    ty = live.get("typhoon_now")
+    return surge.live_surge(ty, hours=hours)
+
+
+@app.get("/api/surge/tide/{station_id}")
+def api_surge_tide(station_id: str, hours: int = Query(48, ge=6, le=168)):
+    """单站天文潮谐波推算（逐时，CD 基准）。"""
+    from . import surge
+    pts = surge.predict_tide(station_id, datetime.now(), hours=hours)
+    if not pts:
+        raise HTTPException(status_code=404, detail="站点不存在")
+    return {"station_id": station_id, "n": len(pts), "tide": pts,
+            "source": "HKO 8 分潮谐波（RMSE~0.13m）"}
+
+
+@app.post("/api/surge/estimate")
+async def api_surge_estimate(request: Request):
+    """台风增水参数化估计：风速/距离/气压 → 增水（m）与分项。"""
+    from . import surge
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=422, detail="invalid JSON")
+    wind = body.get("wind_ms")
+    dist = body.get("dist_km", 100.0)
+    pres = body.get("pres_hpa", 1013.0)
+    radius = body.get("wind_radius_km", 50.0)
+    if wind is None:
+        raise HTTPException(status_code=422, detail="wind_ms required")
+    total, parts = surge.surge_estimate(float(wind), float(dist), float(pres), float(radius))
+    return {"surge_m": total, "parts": parts,
+            "inputs": {"wind_ms": wind, "dist_km": dist, "pres_hpa": pres, "wind_radius_km": radius}}
+
+
+@app.get("/api/surge/archive")
+def api_surge_archive():
+    """历史事件风暴潮档案（含参数化增水复算）。"""
+    from . import surge
+    return {"events": surge.event_archive(),
+            "source": "CMEMS 波浪 + HKO 天文潮 + 参数化增水复算"}
+
+
+# ============ 沉淀知识库（真实事件案例 + 城安助手 RAG 问答）============
+
+@app.get("/api/knowledge/cases")
+def api_knowledge_cases(domain: str = "", q: str = ""):
+    """案例沉淀列表（6 个真实事件，支持领域筛选与检索）。"""
+    from . import knowledge
+    return knowledge.cases_list(domain=domain, q=q)
+
+
+@app.get("/api/knowledge/cases/{case_id}")
+def api_knowledge_case(case_id: str):
+    """单个案例完整档案：当时已知 / 关键未知 / 模型回放日序列 / 关联来源。"""
+    from . import knowledge
+    r = knowledge.case_detail(case_id)
+    if r is None:
+        raise HTTPException(status_code=404, detail="案例不存在")
+    return r
+
+
+@app.get("/api/knowledge/city-base")
+def api_knowledge_city_base():
+    """城市底座统计：人口 / 建筑 / 地形 / 隐患点人口暴露（真实栅格计算）。"""
+    from . import knowledge
+    return knowledge.city_base()
+
+
+@app.get("/api/knowledge/models")
+def api_knowledge_models():
+    """三个监督模型档案：真实指标 + 验证方式 + 诚实局限。"""
+    from . import knowledge
+    return knowledge.model_archive()
+
+
+class KnowledgeAskHistoryItem(BaseModel):
+    role: str = Field(pattern="^(user|assistant)$")
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class KnowledgeAskRequest(BaseModel):
+    """城安助手问答请求（支持多轮历史）。"""
+    model_config = ConfigDict(extra="forbid")
+    question: str = Field(min_length=1, max_length=2000)
+    history: list[KnowledgeAskHistoryItem] = Field(default_factory=list, max_length=10)
+
+
+@app.post("/api/knowledge/ask")
+def api_knowledge_ask(payload: KnowledgeAskRequest):
+    """城安助手：本地案例检索 + 结构化回答（回答依据 / 还需确认 / 建议动作）。"""
+    from . import knowledge
+    return knowledge.ask(
+        payload.question,
+        history=[h.model_dump() for h in payload.history] or None,
+    )
+
+
+@app.get("/api/knowledge/briefing")
+def api_knowledge_briefing():
+    """今日态势简报（LLM 生成，实况+告警+展望）。"""
+    from . import knowledge
+    return knowledge.daily_briefing()
+
+
+@app.get("/api/knowledge/events")
+def api_knowledge_events():
+    """历史内涝事件库（公开报道真实事件，含受影响区与来源）。"""
+    from . import knowledge
+    return knowledge.historical_events()
+
+
+@app.get("/api/knowledge/suggestions")
+def api_knowledge_suggestions():
+    """预置追问建议（前端快捷按钮）。"""
+    from . import knowledge
+    return {"questions": knowledge.suggested_questions()}
+
+
+@app.get("/api/knowledge/status")
+def api_knowledge_status():
+    """城安助手智能服务状态（LLM 连接 / 模式）。"""
+    from . import knowledge
+    return knowledge.llm_status()

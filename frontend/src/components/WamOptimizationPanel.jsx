@@ -389,6 +389,7 @@ export default function WamOptimizationPanel({ predictData }) {
 
       {result && (
         <>
+          <SubmitDecisionButton result={result} />
           <div className="wamx-trustline">
             <span className="ok-dot" />
             <b>{policyLabel}</b>
@@ -483,5 +484,67 @@ export default function WamOptimizationPanel({ predictData }) {
         </div>
       </details>
     </section>
+  )
+}
+
+
+/* ============ 提交为决策建议（人工审批闭环） ============ */
+
+function SubmitDecisionButton({ result }) {
+  const [state, setState] = useState('idle') // idle | busy | done | err
+  const [msg, setMsg] = useState('')
+
+  async function submit() {
+    setState('busy')
+    setMsg('')
+    try {
+      // 从优化结果提取方案摘要与控制动作
+      const actions = (result?.recommended_actions || result?.actions || []).slice(0, 10).map((a) => ({
+        district: a.district || a.district_id || '全市',
+        action: a.action || 'control',
+        value: a.control ?? a.value ?? a.first_step ?? null,
+        expected_effect: a.expected_effect || null,
+      }))
+      const peak = result?.metrics?.flood?.peak_mm
+        ?? result?.objective?.components?.flood
+        ?? result?.expected_flood_peak_mm
+      const summaryParts = [
+        `WAM ${result?.method || 'CEM'} 优化建议`,
+        actions.length ? `含 ${actions.length} 项分区控制动作` : '无控制动作',
+        peak != null ? `预期内涝峰值 ${typeof peak === 'number' ? peak.toFixed(1) : peak}mm` : '',
+      ].filter(Boolean)
+      const r = await fetch('/api/decisions/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan_summary: summaryParts.join(' · '),
+          control_actions: actions,
+          expected_flood_peak_mm: typeof peak === 'number' ? peak : null,
+          method: result?.method || 'robust_cem_constant_hold',
+        }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.detail || '提交失败')
+      setState('done')
+      setMsg(`已提交 ${d.id} → 待人工决策`)
+    } catch (e) {
+      setState('err')
+      setMsg(e.message)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+      <button
+        className="btn sm primary"
+        onClick={submit}
+        disabled={state === 'busy' || state === 'done'}
+      >
+        {state === 'busy' ? '提交中…' : state === 'done' ? '✓ 已提交决策队列' : '📋 提交为决策建议（人工审批）'}
+      </button>
+      {msg && (
+        <span style={{ fontSize: 11, color: state === 'err' ? 'var(--danger)' : 'var(--ok)' }}>{msg}</span>
+      )}
+    </div>
   )
 }

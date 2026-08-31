@@ -15,11 +15,22 @@ export default function OntologyPanel() {
   if (!data) return null
   const sorted = [...data.districts].sort((a, b) => b.vulnerability - a.vulnerability)
 
+  const topVuln = sorted.slice(0, 3)  // 脆弱性前三
+
   return (
     <section className="card stage">
       <div className="card-h">
         城市 3D 本体 · Ontology
         <span className="hint">{data.model}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, padding: '10px 14px', flexWrap: 'wrap', borderBottom: '1px solid var(--line-soft)' }}>
+        <span className="chip" style={{ color: 'var(--danger)' }}>⚠ 脆弱性 TOP3</span>
+        {topVuln.map((d, i) => (
+          <span key={d.id} className="chip" style={{ cursor: 'pointer' }} onClick={() => setSel(d)}>
+            {i + 1}. {d.name} {(d.vulnerability * 100).toFixed(0)}%
+          </span>
+        ))}
+        <span className="footnote" style={{ marginLeft: 'auto' }}>点击快速定位</span>
       </div>
       <div className="onto-grid">
         <div className="onto-list">
@@ -60,7 +71,13 @@ export default function OntologyPanel() {
           </div>
         )}
       </div>
-      <div className="mc-note">{data.note}</div>
+      <div className="mc-note">
+        {data.note}
+        <div className="mc-src">
+          <b>数据来源：</b>高程/低洼 = Copernicus DEM 30m 派生 · 历史内涝指数 = 官方 2019 易涝点统计 ·
+          排水标准 = 区级设计规范代理参数 · 脆弱性权重 = 研究设定（非官方标准）
+        </div>
+      </div>
     </section>
   )
 }

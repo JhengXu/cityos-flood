@@ -1,5 +1,5 @@
 // 轻量可重试 fetch，避免后端重启/短暂不可用时前端白屏报错
-export async function fetchJSON(url, { retries = 4, backoff = 350 } = {}) {
+export async function fetchJSON(url, { retries = 2, backoff = 250 } = {}) {
   let last
   for (let i = 0; i < retries; i++) {
     try {
@@ -392,4 +392,49 @@ function bboxFromHeaders(r) {
     north: numberHeader(r, 'X-BBox-North') ?? Number.NaN,
     east: numberHeader(r, 'X-BBox-East') ?? Number.NaN,
   }
+}
+
+// ============ 全自然灾害（v4 多灾种 + 3D 场景）============
+export async function getHazardsSummary() {
+  return fetchJSON('/api/hazards/summary')
+}
+
+export async function getTyphoonTrack(name, sid) {
+  const q = new URLSearchParams()
+  if (name) q.set('name', name)
+  if (sid) q.set('sid', sid)
+  return fetchJSON(`/api/hazards/typhoon/track?${q.toString()}`)
+}
+
+export async function getScene3d(opts = {}) {
+  const q = new URLSearchParams({
+    dem_step: String(opts.demStep ?? 8),
+    building_min_height: String(opts.buildingMinHeight ?? 40),
+    building_limit: String(opts.buildingLimit ?? 5000),
+  })
+  return fetchJSON(`/api/scene3d?${q.toString()}`)
+}
+
+export const HAZARD_META = {
+  typhoon: { name: '台风', icon: '🌀', color: '#4da3ff' },
+  surge: { name: '风暴潮', icon: '🌊', color: '#37c8c3' },
+  flood: { name: '内涝', icon: '🌧️', color: '#e08a1e' },
+  landslide: { name: '山体滑坡', icon: '⛰', color: '#c26b1e' },
+}
+
+// 台风等级配色
+export const TYPHOON_LEVEL_COLORS = {
+  super_typhoon: '#b3122b', severe_typhoon: '#d6452a', typhoon: '#e08a1e',
+  sts: '#c9b458', ts: '#7ec8e3', td: '#a8d5ba', unknown: '#888',
+}
+export function typhoonLevelColor(level) {
+  return TYPHOON_LEVEL_COLORS[level] || '#888'
+}
+
+// ============ 多灾种链式预测 ============
+export async function getCascadeTyphoon(name, sid) {
+  const q = new URLSearchParams()
+  if (name) q.set('name', name)
+  if (sid) q.set('sid', sid)
+  return fetchJSON(`/api/ml/cascade/typhoon?${q.toString()}`)
 }

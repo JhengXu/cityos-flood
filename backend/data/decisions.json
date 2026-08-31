@@ -1,0 +1,24 @@
+{
+  "decisions": [
+    {
+      "id": "D-20260830-101548-001",
+      "created_at": "2026-08-30 10:15:48",
+      "status": "pending",
+      "plan_summary": "WAM CEM 优化建议 · 无控制动作",
+      "control_actions": [],
+      "optimizer_run": {
+        "method": "robust_cem_constant_hold",
+        "expected_flood_peak_mm": null
+      },
+      "timeline": [
+        {
+          "at": "2026-08-30 10:15:48",
+          "action": "submit",
+          "by": "WAM 优化器",
+          "note": "生成建议，等待人工决策",
+          "hash": "800e2ac84f44b68f"
+        }
+      ]
+    }
+  ]
+}

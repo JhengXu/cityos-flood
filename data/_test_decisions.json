@@ -1,0 +1,30 @@
+{
+  "decisions": [
+    {
+      "id": "D-20260901-073349-001",
+      "created_at": "2026-09-01 07:33:49",
+      "status": "rejected",
+      "plan_summary": "驳回测试",
+      "control_actions": [],
+      "optimizer_run": {},
+      "timeline": [
+        {
+          "at": "2026-09-01 07:33:49",
+          "action": "submit",
+          "by": "WAM 优化器",
+          "note": "生成建议，等待人工决策",
+          "hash": "82e4d1ffbc7debaa"
+        },
+        {
+          "at": "2026-09-01 07:33:49",
+          "action": "reject",
+          "by": "指挥",
+          "note": "方案不可行",
+          "hash": "2b71a95da7daf3b3"
+        }
+      ],
+      "rejected_by": "指挥",
+      "reject_reason": "方案不可行"
+    }
+  ]
+}

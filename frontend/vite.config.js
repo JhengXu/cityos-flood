@@ -16,5 +16,22 @@ export default defineConfig({
     proxy: {
       '/api': apiTarget,
     },
+    headers: {
+      // index.html 不缓存（保证每次拿到最新构建引用）
+      'Cache-Control': 'no-cache',
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+          vendor: ['react', 'react-dom'],
+          charts: ['recharts'],
+          map: ['leaflet', 'react-leaflet'],
+        },
+      },
+    },
   },
 })
